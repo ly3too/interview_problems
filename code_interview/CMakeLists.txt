@@ -1,0 +1,1 @@
+auto_add_exe_projects(DEPENDS catch)
