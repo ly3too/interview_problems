@@ -28,7 +28,7 @@ public:
             m_in_idx_map[val] = idx;
             ++idx;
         }
-        return reConsRecurse(pre, 0, pre.size());
+        return reConsRecurse(pre, 0, pre.size(), 0);
     }
 
     static void inorderTrav(TreeNode *root, vector<int> &vin) {
@@ -45,20 +45,22 @@ private:
      * reconstruct tree recursively
      * @param pre pre order vals
      * @param vin in order vals
-     * @param start start pos
-     * @param end end pos
+     * @param p_start start pos
+     * @param p_end end pos
+     * @param i_start start of in order
      * @return
      */
-    TreeNode *reConsRecurse(const vector<int> &pre, int start, int end) {
-        if (start >= end) {
+    TreeNode *reConsRecurse(const vector<int> &pre, int p_start, int p_end, int i_start) {
+        if (p_start >= p_end) {
             return nullptr;
         }
-        auto root_val = pre[start];
+        auto root_val = pre[p_start];
         auto root = new TreeNode(root_val);
-        auto root_vin_idx = m_in_idx_map[root_val];
+        auto root_vin_idx = m_in_idx_map[root_val]; // root node index at in order array
+        auto left_len = root_vin_idx - i_start; // left subtree len
 
-        root->left = reConsRecurse(pre, start + 1, root_vin_idx);
-        root->right = reConsRecurse(pre, root_vin_idx + 1, end);
+        root->left = reConsRecurse(pre, p_start + 1, p_start + left_len + 1, i_start);
+        root->right = reConsRecurse(pre, p_start + left_len + 1, p_end, root_vin_idx + 1);
 
         return root;
     }
