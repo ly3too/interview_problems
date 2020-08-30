@@ -15,7 +15,7 @@ function(auto_add_subdirs)
 endfunction()
 
 # add each subdir as an exe project with dependencies
-function(auto_add_exe_projects)
+function(auto_add_test_projects)
     cmake_parse_arguments(auto_add_exe_projects "" "" "DEPENDS" ${ARGN})
 
     file(GLOB DIRS *)
@@ -26,10 +26,11 @@ function(auto_add_exe_projects)
             if (SRCS)
                 get_filename_component(EXE_NAME ${DIR} NAME)
                 message("add project: ${EXE_NAME}")
-                add_executable(${EXE_NAME}_exe ${SRCS})
+                add_executable(test_${EXE_NAME} ${SRCS})
+                add_test(test_${EXE_NAME} test_${EXE_NAME})
 
                 if (auto_add_exe_projects_DEPENDS)
-                    target_link_libraries(${EXE_NAME}_exe PRIVATE ${auto_add_exe_projects_DEPENDS})
+                    target_link_libraries(test_${EXE_NAME} PRIVATE ${auto_add_exe_projects_DEPENDS})
                 endif()
             endif(SRCS)
 
@@ -37,4 +38,9 @@ function(auto_add_exe_projects)
     endforeach()
 endfunction()
 
+if (NOT WIN32)
+find_package(GTest REQUIRED)
+endif()
+
+enable_testing()
 auto_add_subdirs()

@@ -1,1 +1,1 @@
-auto_add_exe_projects(DEPENDS catch)
+auto_add_test_projects(DEPENDS catch GTest::GTest GTest::Main)
