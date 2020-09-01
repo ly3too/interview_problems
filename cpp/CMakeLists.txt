@@ -39,7 +39,9 @@ function(auto_add_test_projects)
 endfunction()
 
 if (NOT WIN32)
-find_package(GTest REQUIRED)
+    find_package(GTest REQUIRED)
+else()
+    find_package(GTest REQUIRED PATHS ext/gtest/lib NO_DEFAULT_PATH)
 endif()
 
 enable_testing()
