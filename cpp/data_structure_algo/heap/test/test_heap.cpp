@@ -48,6 +48,21 @@ TEST(test, heap) {
     ASSERT_EQ(heap_sorted, ori);
 }
 
+TEST(test, relax) {
+    RelaxHeap<int> heap({5, 3, 2, 1, 6});
+    ASSERT_EQ(heap.top(), 1);
+    heap.relaxKey(5, 0);
+    ASSERT_EQ(heap.top(), 0);
+
+    vector<int> sorted;
+    while (heap.size()) {
+        sorted.emplace_back(heap.top());
+        heap.pop();
+    }
+    cout << "after sorted: " << sorted << endl;
+    ASSERT_EQ(vector<int>({0, 1, 2, 3, 6}), sorted);
+}
+
 int main() {
     testing::InitGoogleTest();
     return RUN_ALL_TESTS();
