@@ -170,24 +170,27 @@ public:
     using value_type = std::remove_reference_t<T>;
 
 protected:
-    struct Node {
-        Node *prev;
-        Node *next;
+    struct BaseNode {
+        BaseNode *prev;
+        BaseNode *next;
+        BaseNode(): prev(this), next(this) {}
+    };
+
+    struct Node: public BaseNode {
         value_type val;
 
         template<typename ...Args>
-        Node(Args&&... val): prev(nullptr), next(nullptr), val(std::forward<Args>(val)...) {
+        Node(Args&&... val): BaseNode(), val(std::forward<Args>(val)...) {
 
         }
     };
 
-    Node *m_head;
-    Node *m_tail;
+    BaseNode m_head;
     std::size_t m_size;
 public:
     class iterator {
     public:
-        iterator(Node *node): m_cur(node) {}
+        iterator(BaseNode *node): m_cur(node) {}
 
         iterator operator++() {
             m_cur = m_cur->next;
@@ -195,11 +198,11 @@ public:
         }
 
         value_type &operator*() {
-            return m_cur->val;
+            return static_cast<Node *>(m_cur)->val;
         }
 
         value_type &operator->() {
-            return &m_cur->val;
+            return &static_cast<Node *>(m_cur)->val;
         }
 
         bool operator!=(const iterator &other) {
@@ -211,13 +214,12 @@ public:
         }
 
     protected:
-        Node *m_cur;
+        BaseNode *m_cur;
 
         friend class List;
     };
 
-    List(): m_head(nullptr), m_tail(nullptr), m_size(0) {
-
+    List(): m_head(), m_size(0) {
     }
 
     List(const std::initializer_list<value_type> &vals): List() {
@@ -231,13 +233,14 @@ public:
     }
 
     void clear() {
-        auto cur = m_head;
-        while(cur) {
-            auto node = cur;
+        auto cur = m_head.next;
+        while(cur != &m_head) {
+            auto node = static_cast<Node *>(cur);
             cur = cur->next;
             delete node;
         }
-        m_head = m_tail = nullptr;
+        m_head.prev = &m_head;
+        m_head.next = &m_head;
         m_size = 0;
     }
 
@@ -247,32 +250,30 @@ public:
 
     template<typename ... Args>
     void emplace_back(Args&&... val) {
+        auto prev = m_head.prev;
+        auto next = &m_head;
         auto node = new Node(std::forward<Args>(val)...);
-        if (!m_tail) {
-            m_head = m_tail = node;
-        } else {
-            m_tail->next = node;
-            node->prev = m_tail;
-            m_tail = node;
-        }
+        node->next = next;
+        next->prev = node;
+        prev->next = node;
+        node->prev = prev;
         ++m_size;
     }
 
     template<typename ... Args>
     void emplace_front(Args&&... val) {
+        auto prev = &m_head;
+        auto next = m_head.next;
         auto node = new Node(std::forward<Args>(val)...);
-        if (!m_head) {
-            m_head = m_tail = node;
-        } else {
-            node->next = m_head;
-            m_head->prev = node;
-            m_head = node;
-        }
+        node->next = next;
+        next->prev = node;
+        prev->next = node;
+        node->prev = prev;
         ++m_size;
     }
 
     /**
-     * emplace after it
+     * emplace in front of it
      * @param it
      * @param val
      */
@@ -285,35 +286,20 @@ public:
         auto next = it.m_cur;
         auto prev = it.m_cur->prev;
 
-        node->prev = prev;
-        if (prev) {
-            prev->next = node;
-        } else {
-            m_head = node;
-        }
-
         node->next = next;
         next->prev = node;
+        prev->next = node;
+        node->prev = prev;
         ++m_size;
     }
 
     void erase(const iterator &it) {
         auto prev = it.m_cur->prev;
         auto next = it.m_cur->next;
-
-        if (!prev) {
-            m_head = next;
-        } else {
-            prev->next = next;
-        }
-
-        if (!next) {
-            m_tail = prev;
-        } else {
-            next->prev = prev;
-        }
+        prev->next = next;
+        next->prev = prev;
         --m_size;
-        delete it.m_cur;
+        delete static_cast<Node *>(it.m_cur);
     }
 
     void remove(const value_type &val) {
@@ -326,10 +312,10 @@ public:
     }
 
     iterator begin() const {
-        return iterator(m_head);
+        return iterator(const_cast<BaseNode *>(m_head.next));
     }
 
     iterator end() const {
-        return iterator(nullptr);
+        return iterator(const_cast<BaseNode *>(&m_head));
     }
 };

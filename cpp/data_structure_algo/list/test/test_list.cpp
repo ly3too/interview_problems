@@ -62,10 +62,7 @@ TEST(test, List) {
     std_list.emplace_back(val1);
     my_list.emplace_back(val1);
     ASSERT_EQ(std_list.size(), my_list.size());
-    auto it2 = my_list.begin();
-    for (auto it = std_list.begin(); it != std_list.end(); ++it, ++it2) {
-        ASSERT_EQ(*it, *it2);
-    }
+    ASSERT_EQ(my_list, std_list);
 
     std_list.erase(++std_list.begin());
     my_list.erase(++my_list.begin());
