@@ -22,10 +22,12 @@ protected:
     }
 
     element_type *m_ele = nullptr;
-    count_type *const m_counter = nullptr;
+    count_type *m_counter;
     deleter_type m_del = defaultDelete;
 public:
-    SharedPtr() = default;
+    SharedPtr(): m_counter(new count_type(1)) {}
+
+    SharedPtr(element_type *ptr): m_ele(ptr), m_counter(new count_type(1)) {}
 
     template<typename Tp, typename Del>
     SharedPtr(Tp&& ptr, Del del): m_ele(std::forward<Tp>(ptr)), m_counter(new count_type(1)),
@@ -34,9 +36,7 @@ public:
 
     SharedPtr(const SharedPtr &other): m_ele(other.m_ele),
         m_counter(other.m_counter), m_del(other.m_del) {
-        if (m_counter) {
-            ++(*m_counter);
-        }
+        ++(*m_counter);
     }
 
     SharedPtr &operator=(const SharedPtr &other) {
@@ -52,7 +52,9 @@ public:
     }
 
     SharedPtr(SharedPtr &&other) noexcept : SharedPtr() {
-        std::swap(*this, other);
+        std::swap(this->m_counter, other.m_counter);
+        std::swap(this->m_ele, other.m_ele);
+        std::swap(this->m_del, other.m_del);
     }
 
     SharedPtr &operator=(SharedPtr &&other)  noexcept {
@@ -61,11 +63,7 @@ public:
     }
 
     ~SharedPtr() {
-        if (!m_counter) {
-            return;
-        }
-        --(*m_counter);
-        if (*m_counter == 0) {
+        if (--(*m_counter) == 0) {
             delete m_counter;
             m_del(m_ele);
         }
@@ -77,5 +75,25 @@ public:
 
     void reset(element_type *ptr) {
         std::swap(*this, SharedPtr(ptr, m_del));
+    }
+
+    element_type &operator*() {
+        return *m_ele;
+    }
+
+    element_type *operator->() {
+        return m_ele;
+    }
+
+    template<typename ...Args>
+    static SharedPtr<T> makeShared(Args&&... args) {
+        return SharedPtr<T>(new T(std::forward<Args>(args)...));
+    }
+
+    count_type getCount() const {
+        if (m_counter) {
+            return *m_counter;
+        }
+        return 1;
     }
 };
