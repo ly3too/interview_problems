@@ -1,5 +1,1 @@
-if (WIN32)
-    auto_add_test_projects(DEPENDS catch GTest::gtest GTest::gtest_main)
-else()
-    auto_add_test_projects(DEPENDS catch GTest::GTest GTest::Main)
-endif()
+auto_add_test_projects(DEPENDS catch ${GTEST})
