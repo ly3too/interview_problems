@@ -23,12 +23,14 @@ bool operator==(const vector<T> &vec1, const Vector<T> &vec2) {
 TEST(test, vector) {
     vector<string> vec1(8);
     Vector<string> vec2(8);
-    fill(vec1.begin(), vec1.end(), "123");
-    fill(vec2.begin(), vec2.end(), "123");
+    fill(vec1.begin() + 1, vec1.end(), "123");
+    fill(vec2.begin() + 1, vec2.end(), "123");
     ASSERT_EQ(vec1, vec2);
     ASSERT_EQ(vec2.capacity(), 8);
+    ASSERT_EQ(vec1[0], vec2[0]);
+    ASSERT_EQ(vec1[7], "123");
 
-    // resize
+    // grow
     vec1.emplace_back("2");
     vec2.emplace_back("2");
     ASSERT_EQ(vec1, vec2);
@@ -42,6 +44,56 @@ TEST(test, vector) {
     }
     ASSERT_EQ(vec1, vec2);
     ASSERT_EQ(vec2.capacity(), 8);
+}
+
+TEST(test, dqvector) {
+    {
+        DqVector<int> vec;
+        DqVector<int> vec2(3, 11);
+        ASSERT_EQ(vec.capacity(), 0);
+        ASSERT_EQ(vec2.capacity(), 3);
+        ASSERT_EQ(vec2[1], 11);
+        for (auto &item: vec2) {
+            ASSERT_EQ(item, 11);
+        }
+    }
+    DqVector<int, allocator<int>, true, true, 5> vec;
+    vec.empalceBack(1);
+    ASSERT_EQ(vec.size(), 1);
+    ASSERT_EQ(vec.capacity(), 5);
+    vec.empalceFront(-1);
+    ASSERT_EQ(vec.size(), 2);
+    ASSERT_EQ(vec.capacity(), 10);
+    ASSERT_EQ(vec[0], -1);
+    ASSERT_EQ(vec[1], 1);
+    ASSERT_EQ(vec.back(), 1);
+
+    // grow
+    for (auto i = 2; i <= 6; ++i) {
+        vec.empalceBack(i);
+    }
+    // when add last one grow size of;
+    ASSERT_EQ(vec.capacity(), 16);
+    ASSERT_EQ(vec.frontSpace(), 4);
+    for (auto i = 2; i <= 6; ++i) {
+        vec.empalceFront(-i);
+    }
+    // when add last one grow size of 11
+    ASSERT_EQ(vec.capacity(), 27);
+    ASSERT_EQ(vec.size(), 12);
+    ASSERT_EQ(vec[0], -6);
+    ASSERT_EQ(vec[11], 6);
+
+    // now left space 10, right space 5
+    // shrink
+    for (auto i = 0; i < 7; ++i) {
+        vec.popFront();
+    }
+    ASSERT_EQ(vec.frontSpace(), 5);
+    for (auto i = 0; i < 3; ++i) {
+        vec.popBack();
+    }
+    ASSERT_EQ(vec.backSpace(), 5);
 }
 
 int main() {

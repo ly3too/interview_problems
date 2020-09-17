@@ -66,7 +66,7 @@ function(auto_add_library TARGET_NAME)
     endif()
     # link the target
     if (DEPEND_TARGETS)
-        target_link_libraries(${TARGET_NAME} ${DEPEND_TARGETS})
+        target_link_libraries(${TARGET_NAME} ${_HEADER_TYPE} ${DEPEND_TARGETS})
     endif()
     # add public headers
     target_include_directories(${TARGET_NAME} ${_HEADER_TYPE} $<INSTALL_INTERFACE:include>
