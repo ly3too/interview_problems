@@ -41,6 +41,10 @@ TEST(test, ptr) {
         ASSERT_EQ(*ptr2, 20);
     }
     ASSERT_EQ(cnt1, 1);
+
+
+    cout << "sizeof(SharedPtr): " << sizeof(SharedPtr<int>) << endl;
+    cout << "sizeof(shared_ptr) " << sizeof(shared_ptr<int>) << endl;
 }
 
 int main() {
