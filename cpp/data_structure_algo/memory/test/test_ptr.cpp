@@ -31,6 +31,7 @@ TEST(test, ptr) {
     ASSERT_EQ(cnt1, 1);
 
     cnt1 = 0;
+    int cnt2 = 0;
     {
         auto ptr = SharedPtr<int>(new int(100), [&cnt1](const int *ptr){ ++cnt1; delete ptr;});
         SharedPtr<int> ptr2(move(ptr));
@@ -39,6 +40,11 @@ TEST(test, ptr) {
         ASSERT_EQ(*ptr2, 100);
         *ptr3 = 20;
         ASSERT_EQ(*ptr2, 20);
+
+        auto ptr4 = SharedPtr<int>(new int(11), [&cnt2](const int *ptr){++cnt2; delete ptr;});
+        ptr4.reset(new int(12));
+        ASSERT_EQ(*ptr4, 12);
+        ASSERT_EQ(cnt2, 1);
     }
     ASSERT_EQ(cnt1, 1);
 

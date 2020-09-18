@@ -9,6 +9,11 @@ public:
     using deleter_type = std::function<void(element_type *)>;
 
 protected:
+
+    element_type *m_ele = nullptr;
+    count_type m_counter = 1;
+    deleter_type m_del = defaultDelete;
+public:
     static void defaultDelete(element_type *ptr) {
         if (!ptr) {
             return;
@@ -20,10 +25,6 @@ protected:
         }
     }
 
-    element_type *m_ele = nullptr;
-    count_type m_counter = 1;
-    deleter_type m_del = defaultDelete;
-public:
     SharedCounter() = default;
 
     ~SharedCounter() {
@@ -103,7 +104,8 @@ public:
     }
 
     SharedPtr &operator=(SharedPtr &&other)  noexcept {
-        std::swap(*this, other);
+        std::swap(this->m_counter, other.m_counter);
+        std::swap(this->m_ele, other.m_ele);
         return *this;
     }
 
@@ -118,8 +120,10 @@ public:
         return m_ele;
     }
 
-    void reset(element_type *ptr) {
-        std::swap(*this, SharedPtr(ptr));
+    template<typename Del = typename counter_type::deleter_type>
+    void reset(element_type *ptr, Del del = counter_type::defaultDelete) {
+        SharedPtr<T> tmp(ptr, std::move(del));
+        std::swap(*this, tmp);
     }
 
     element_type &operator*() {
