@@ -5,6 +5,7 @@
 #define CATCH_CONFIG_MAIN
 #include "catch.hpp"
 #include <vector>
+#include <functional>
 #include <unordered_map>
 
 using namespace std;
@@ -38,6 +39,19 @@ public:
         inorderTrav(root->left, vin);
         vin.emplace_back(root->val);
         inorderTrav(root->right, vin);
+    }
+
+    static void postOrderTrav(TreeNode *root, const function<void(TreeNode *)> &func) {
+        if (!root) {
+            return;
+        }
+        if (root->left) {
+            postOrderTrav(root->left, func);
+        }
+        if (root->right) {
+            postOrderTrav(root->right, func);
+        }
+        func(root);
     }
 
 private:
@@ -77,4 +91,5 @@ TEST_CASE("case", "1") {
     vector<int> out_in;
     Solution::inorderTrav(ret, out_in);
     REQUIRE(out_in == vin);
+    Solution::postOrderTrav(ret, [](auto ptr){delete ptr;});
 }

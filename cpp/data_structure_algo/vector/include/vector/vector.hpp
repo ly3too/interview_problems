@@ -262,9 +262,9 @@ protected:
     }
 
 public:
-    DqVector() = default;
+    DqVector(allocator_type alloc = allocator_type()): m_alloc(std::move(alloc)) {};
     DqVector(size_type size, const value_type &val = value_type(),
-             allocator_type alloc = allocator_type()): m_alloc(alloc) {
+             allocator_type alloc = allocator_type()): m_alloc(std::move(alloc)) {
         spareBack(size);
         while (size--) {
             empalceBack(val);
@@ -354,11 +354,11 @@ public:
         reallocate_and_relocate(cap, start);
     }
 
-    reference front() {
+    reference front() const {
         return *m_begin;
     }
 
-    reference back() {
+    reference back() const {
         return *(m_end - 1);
     }
 
