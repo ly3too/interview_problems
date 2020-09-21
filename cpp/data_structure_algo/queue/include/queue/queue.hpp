@@ -78,6 +78,10 @@ public:
 
     void pop_front() {
         m_map.front()->pop_front();
+        if (m_map.front()->empty()) {
+            delete m_map.front();
+            m_map.pop_front();
+        }
     }
 
     template<typename ...Args>
@@ -103,6 +107,10 @@ public:
 
     void pop_back() {
         m_map.back()->pop_back();
+        if (m_map.back()->empty()) {
+            delete m_map.back();
+            m_map.pop_back();
+        }
     }
 
     bool empty() const {
