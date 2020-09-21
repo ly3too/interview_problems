@@ -164,10 +164,13 @@ public:
     }
 };
 
-template<typename T>
+template<typename T, typename Alloc = std::allocator<T>>
 class List {
 public:
     using value_type = std::remove_reference_t<T>;
+    using size_type = std::size_t;
+    using allocator_type = Alloc;
+    using reference = value_type &;
 
 protected:
     struct BaseNode {
@@ -187,6 +190,7 @@ protected:
 
     BaseNode m_head;
     std::size_t m_size;
+    allocator_type m_alloc = allocator_type();
 public:
     class iterator {
     public:
@@ -224,7 +228,15 @@ public:
         friend class List;
     };
 
-    List(): m_head(), m_size(0) {
+    List(allocator_type alloc = allocator_type()):
+    m_head(), m_size(0), m_alloc(std::move(alloc)) {
+    }
+
+    explicit List(size_type n, const value_type &val = value_type(),
+                  allocator_type alloc = allocator_type()): List(std::move(alloc)) {
+        while(n--) {
+            emplace_back(val);
+        }
     }
 
     List(const std::initializer_list<value_type> &vals): List() {
@@ -322,5 +334,29 @@ public:
 
     iterator end() const {
         return iterator(const_cast<BaseNode *>(&m_head));
+    }
+
+    /**
+     * @warning const method return a non const reference for simplicity
+     * @return
+     */
+    reference front() const {
+        return static_cast<Node *>(m_head.next)->val;
+    }
+
+    reference back() const {
+        return static_cast<Node *>(m_head.prev)->val;
+    }
+
+    void pop_back() {
+        erase(--end());
+    }
+
+    void pop_front() {
+        erase(begin());
+    }
+
+    bool empty() const {
+        return m_size == 0;
     }
 };
