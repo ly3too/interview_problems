@@ -197,6 +197,11 @@ public:
             return *this;
         }
 
+        iterator operator--() {
+            m_cur = m_cur->prev;
+            return *this;
+        }
+
         value_type &operator*() {
             return static_cast<Node *>(m_cur)->val;
         }

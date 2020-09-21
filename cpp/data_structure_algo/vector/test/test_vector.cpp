@@ -58,10 +58,10 @@ TEST(test, dqvector) {
         }
     }
     DqVector<int, allocator<int>, true, true, 5> vec;
-    vec.empalceBack(1);
+    vec.emplace_back(1);
     ASSERT_EQ(vec.size(), 1);
     ASSERT_EQ(vec.capacity(), 5);
-    vec.empalceFront(-1);
+    vec.emplace_front(-1);
     ASSERT_EQ(vec.size(), 2);
     ASSERT_EQ(vec.capacity(), 10);
     ASSERT_EQ(vec[0], -1);
@@ -70,13 +70,13 @@ TEST(test, dqvector) {
 
     // grow
     for (auto i = 2; i <= 6; ++i) {
-        vec.empalceBack(i);
+        vec.emplace_back(i);
     }
     // when add last one grow size of;
     ASSERT_EQ(vec.capacity(), 16);
-    ASSERT_EQ(vec.frontSpace(), 4);
+    ASSERT_EQ(vec.front_space(), 4);
     for (auto i = 2; i <= 6; ++i) {
-        vec.empalceFront(-i);
+        vec.emplace_front(-i);
     }
     // when add last one grow size of 11
     ASSERT_EQ(vec.capacity(), 27);
@@ -87,13 +87,13 @@ TEST(test, dqvector) {
     // now left space 10, right space 5
     // shrink
     for (auto i = 0; i < 7; ++i) {
-        vec.popFront();
+        vec.pop_front();
     }
-    ASSERT_EQ(vec.frontSpace(), 5);
+    ASSERT_EQ(vec.front_space(), 5);
     for (auto i = 0; i < 3; ++i) {
-        vec.popBack();
+        vec.pop_back();
     }
-    ASSERT_EQ(vec.backSpace(), 5);
+    ASSERT_EQ(vec.back_space(), 5);
 }
 
 int main() {

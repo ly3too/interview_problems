@@ -265,9 +265,9 @@ public:
     DqVector() = default;
     DqVector(size_type size, const value_type &val = value_type(),
              allocator_type alloc = allocator_type()): m_alloc(alloc) {
-        spareBack(size);
+        spare_back(size);
         while (size--) {
-            empalceBack(val);
+            emplace_back(val);
         }
     }
 
@@ -291,11 +291,11 @@ public:
         return m_limit - m_start;
     }
 
-    size_type frontSpace() const {
+    size_type front_space() const {
         return m_begin - m_start;
     }
 
-    size_type backSpace() const {
+    size_type back_space() const {
         return m_limit - m_end;
     }
 
@@ -307,8 +307,8 @@ public:
      * reserve space in front
      * @param len total empty space in front
      */
-    void spareFront(size_type len) {
-        if (len == frontSpace()) {
+    void spare_front(size_type len) {
+        if (len == front_space()) {
             return;
         }
         size_type total_len = m_limit - m_begin + len;
@@ -319,12 +319,12 @@ public:
      * reserve space at the end
      * @param len
      */
-    void spareBack(size_type len) {
-        if (len == backSpace()) {
+    void spare_back(size_type len) {
+        if (len == back_space()) {
             return;
         }
         size_type total_len = m_end - m_start + len;
-        reallocate_and_relocate(total_len, frontSpace());
+        reallocate_and_relocate(total_len, front_space());
     }
 
     /**
@@ -348,7 +348,7 @@ public:
         if (start > cap) {
             throw std::invalid_argument("start");
         }
-        if (start == frontSpace() && cap == capacity()) {
+        if (start == front_space() && cap == capacity()) {
             return;
         }
         reallocate_and_relocate(cap, start);
@@ -363,10 +363,10 @@ public:
     }
 
     template<typename ...Args>
-    void empalceFront(Args&&... args) {
-        if (!frontSpace()) {
+    void emplace_front(Args&&... args) {
+        if (!front_space()) {
             if (AUTO_FRONT_RESIZE) {
-                spareFront(std::max(size(), MIN_CAP));
+                spare_front(std::max(size(), MIN_CAP));
             } else {
                 throw std::runtime_error("no space in front");
             }
@@ -375,7 +375,7 @@ public:
         --m_begin;
     }
 
-    void popFront() {
+    void pop_front() {
         m_alloc.destroy(m_begin);
         ++m_begin;
         if (!AUTO_FRONT_RESIZE) {
@@ -383,15 +383,15 @@ public:
         }
         auto left_len = m_end - m_start;
         if ((left_len / 4) >= size()) {
-            spareFront(std::max(size(), MIN_CAP));
+            spare_front(std::max(size(), MIN_CAP));
         }
     }
 
     template<typename ...Args>
-    void empalceBack(Args&&... args) {
-        if (!backSpace()) {
+    void emplace_back(Args&&... args) {
+        if (!back_space()) {
             if (AUTO_BACK_RESIZE) {
-                spareBack(std::max(size(), MIN_CAP));
+                spare_back(std::max(size(), MIN_CAP));
             } else {
                 throw std::runtime_error("no space at the back");
             }
@@ -400,7 +400,7 @@ public:
         ++m_end;
     }
 
-    void popBack() {
+    void pop_back() {
         m_alloc.destroy(m_end - 1);
         --m_end;
         if (!AUTO_BACK_RESIZE) {
@@ -408,7 +408,7 @@ public:
         }
         auto right_len = m_limit - m_begin;
         if (right_len / 4 >= size()) {
-            spareBack(std::max(size(), MIN_CAP));
+            spare_back(std::max(size(), MIN_CAP));
         }
     }
 
