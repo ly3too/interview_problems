@@ -188,9 +188,11 @@ protected:
         }
     };
 
+    using node_alloc_type = typename Alloc::template rebind<Node>::other;
+
     BaseNode m_head;
     std::size_t m_size;
-    allocator_type m_alloc = allocator_type();
+    node_alloc_type m_alloc = node_alloc_type();
 public:
     class iterator {
     public:
@@ -254,7 +256,8 @@ public:
         while(cur != &m_head) {
             auto node = static_cast<Node *>(cur);
             cur = cur->next;
-            delete node;
+            m_alloc.destroy(node);
+            m_alloc.deallocate(node, 1);
         }
         m_head.prev = &m_head;
         m_head.next = &m_head;
@@ -269,7 +272,19 @@ public:
     void emplace_back(Args&&... val) {
         auto prev = m_head.prev;
         auto next = &m_head;
-        auto node = new Node(std::forward<Args>(val)...);
+
+        Node *node = nullptr;
+        try {
+            node = m_alloc.allocate(1);
+            m_alloc.construct(node, std::forward<Args>(val)...);
+        } catch (...) {
+            if (node) {
+                m_alloc.destroy(node);
+                m_alloc.deallocate(node, 1);
+            }
+            throw;
+        }
+
         node->next = next;
         next->prev = node;
         prev->next = node;
