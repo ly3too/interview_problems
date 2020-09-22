@@ -1,0 +1,3 @@
+auto_add_library(tree TYPE INTERFACE DEPENDS stack)
+
+auto_add_test(test_tree SRCS test/test_tree.cpp DEPENDS tree ${GTEST})
