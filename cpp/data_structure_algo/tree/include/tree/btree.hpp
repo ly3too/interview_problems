@@ -23,7 +23,7 @@ namespace btree {
     template<typename T>
     struct Node: public BaseNode<Node<T>> {
         using value_type = T;
-        T val;
+        value_type val;
 
         template<typename ...Args>
         explicit Node(Args&&... args): BaseNode<Node<T>>(), val(std::forward<Args>(args)...) {}
@@ -106,13 +106,13 @@ namespace btree {
      * @param call call on each node, return true if continue else return false
      * @return return the last node which call return false
      */
-    template <typename T>
-    Node<T> * InOrderTrav(Node<T> *root, const std::function<bool (Node<T> *)> &call) {
+    template <typename T, typename NT = Node<T>, typename Call = std::function<bool (NT *)>>
+    NT *InOrderTrav(NT *root, const Call &call) {
         if (!root) {
             return nullptr;
         }
 
-        using PNode = Node<T> *;
+        using PNode = NT *;
         auto stack = Stack<PNode, std::allocator<PNode>, Vector<PNode>>();
         stack.emplace(root);
         while(!stack.empty()) {
@@ -120,10 +120,10 @@ namespace btree {
             if (top) {
                 stack.pop();
 
-                if (top->right) stack.emplace(top->getRight()); // right
+                if (top->getRight()) stack.emplace(top->getRight()); // right
                 stack.emplace(top); // middle
                 stack.emplace(nullptr);
-                if (top->left) stack.emplace(top->getLeft()); // left
+                if (top->getLeft()) stack.emplace(top->getLeft()); // left
             } else {
                 stack.pop();
                 auto cur = stack.top();
@@ -143,13 +143,13 @@ namespace btree {
      * @param call call on each node, return true if continue else return false
      * @return return the last node which call return false
      */
-    template <typename T>
-    Node<T> * PreOrderTrav(Node<T> *root, const std::function<bool (Node<T> *)> &call) {
+    template <typename T, typename NT = Node<T>, typename Call = std::function<bool (NT *)>>
+    NT *PreOrderTrav(NT *root, const Call &call) {
         if (!root) {
             return nullptr;
         }
 
-        using PNode = Node<T> *;
+        using PNode = NT *;
         auto stack = Stack<PNode, std::allocator<PNode>, Vector<PNode>>();
         stack.emplace(root);
         while(!stack.empty()) {
@@ -157,8 +157,8 @@ namespace btree {
             if (top) {
                 stack.pop();
 
-                if (top->right) stack.emplace(top->getRight()); // right
-                if (top->left) stack.emplace(top->getLeft()); // left
+                if (top->getRight()) stack.emplace(top->getRight()); // right
+                if (top->getLeft()) stack.emplace(top->getLeft()); // left
                 stack.emplace(top); // middle
                 stack.emplace(nullptr);
             } else {
@@ -180,13 +180,13 @@ namespace btree {
      * @param call call on each node, return true if continue else return false
      * @return return the last node which call return false
      */
-    template <typename T>
-    Node<T> * PostOrderTrav(Node<T> *root, const std::function<bool (Node<T> *)> &call) {
+    template <typename T, typename NT = Node<T>, typename Call = std::function<bool (NT *)>>
+    NT *PostOrderTrav(NT *root, const Call &call) {
         if (!root) {
             return nullptr;
         }
 
-        using PNode = Node<T> *;
+        using PNode = NT *;
         auto stack = Stack<PNode, std::allocator<PNode>, Vector<PNode>>();
         stack.emplace(root);
         while(!stack.empty()) {
@@ -196,8 +196,8 @@ namespace btree {
 
                 stack.emplace(top); // middle
                 stack.emplace(nullptr);
-                if (top->right) stack.emplace(top->getRight()); // right
-                if (top->left) stack.emplace(top->getLeft()); // left
+                if (top->getRight()) stack.emplace(top->getRight()); // right
+                if (top->getLeft()) stack.emplace(top->getLeft()); // left
             } else {
                 stack.pop();
                 auto cur = stack.top();

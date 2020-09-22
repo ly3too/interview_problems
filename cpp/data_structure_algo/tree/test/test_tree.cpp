@@ -4,6 +4,17 @@
 using namespace std;
 using namespace btree;
 
+template<typename T>
+struct MirrNode: public BaseNode<MirrNode<T>> {
+    T val;
+    inline MirrNode *getLeft() {
+        return this->right;
+    }
+    inline MirrNode *getRight() {
+        return this->left;
+    }
+};
+
 TEST(test, tree) {
     auto n1 = new Node<int>(1);
     auto n2 = new Node<int>(2);
@@ -36,6 +47,15 @@ TEST(test, tree) {
     ret = InOrderTrav<int>(n3, func);
     ASSERT_EQ(ret, nullptr);
     ASSERT_EQ(out, vector<int>({1, 2, 3, 4, 5, 6, 7}));
+
+    out.clear();
+    ret = reinterpret_cast<Node<int> *>(InOrderTrav<int, MirrNode<int>>(
+            reinterpret_cast<MirrNode<int> *>(n3), [&out](auto ptr){
+                out.emplace_back(ptr->val);
+                return true;
+            }));
+    ASSERT_EQ(ret, nullptr);
+    ASSERT_EQ(out, vector<int>({7, 6, 5, 4, 3, 2, 1}));
 
     // pre order
     out.clear();
