@@ -58,3 +58,33 @@ TEST(test, bst_search) {
     // clean up
     PostOrderTravRecur(root, [](auto node) {delete node; return true;});
 }
+
+TEST(test, unlink) {
+    auto n1 = BSTNode<int>(1);
+    auto n2 = BSTNode<int>(2);
+    auto n3 = BSTNode<int>(3);
+    auto n4 = BSTNode<int>(4);
+    auto n5 = BSTNode<int>(5);
+    auto n6 = BSTNode<int>(6);
+    n2.setLeft(&n1);
+    n1.setParent(&n2);
+    n2.setRight(&n5);
+    n5.setParent(&n2);
+    n5.setLeft(&n3);
+    n3.setParent(&n5);
+    n3.setRight(&n4);
+    n4.setParent(&n3);
+    n5.setRight(&n6);
+    n6.setParent(&n5);
+
+    auto root = BstUnlinkNode<int>(&n2, &n2);
+    ASSERT_EQ(root, &n3);
+    ASSERT_EQ(root->getRight(), &n5);
+    ASSERT_EQ(n5.getLeft(), &n4);
+
+    auto root2 = BstUnlinkNode<int>(root, &n5);
+    ASSERT_EQ(root2, root);
+    ASSERT_EQ(root->getRight(), &n6);
+    ASSERT_EQ(n6.getRight(), nullptr);
+    ASSERT_EQ(n6.getLeft(), nullptr);
+}

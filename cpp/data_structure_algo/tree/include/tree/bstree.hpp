@@ -177,6 +177,69 @@ inline NT *findFirstLeftParent(NT *root) {
     return root->getParent();
 }
 
+/**
+ * unlink node from a tree, node must exist
+ * @tparam T
+ * @tparam NT
+ * @param root
+ * @param node
+ * @return
+ */
+template <typename T, typename NT = BSTNode<T>>
+NT *BstUnlinkNode(NT *root, NT *node) {
+    if (!node) {
+        return root;
+    }
+
+    auto left = node->getLeft();
+    auto right = node->getRight();
+    // single child, move child up
+    if (!left || !right) {
+        auto next = left;
+        if (right) {
+            next = right;
+        }
+        auto parent = node->getParent();
+        // delete the root node
+        if (!parent) {
+            if (next) {
+                next->setParent(nullptr);
+            }
+            return next;
+        }
+
+        if (parent->getLeft() == node) {
+            parent->setLeft(next);
+        } else {
+            parent->setRight(next);
+        }
+        if (next)
+            next->setParent(parent);
+        return root;
+    }
+
+    // find the left most right child, which must has children count of less or equal to 1
+    auto successor = findLeftMost(node->getRight());
+    // unlink it from tree of right tree
+    BstUnlinkNode<T, NT>(node, successor);
+    // reset parent link
+    auto parent = node->getParent();
+    if (!parent) {
+        root = successor;
+    } else {
+        if (parent->getLeft() == node) {
+            parent->setLeft(successor);
+        } else {
+            parent->setRight(successor);
+        }
+    }
+    // swap the link
+    successor->setLeft(node->getLeft());
+    successor->setRight(node->getRight());
+    successor->setParent(node->getParent());
+    return root;
+}
+
 template <typename T, typename NT = BSTNode<T>>
 class BstConstIterator {
 public:
@@ -255,5 +318,7 @@ public:
         return &BstConstIterator<T, NT>::m_node->val;
     }
 };
+
+
 
 };
