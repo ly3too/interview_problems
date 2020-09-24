@@ -59,6 +59,23 @@ TEST(test, bst_search) {
     PostOrderTravRecur(root, [](auto node) {delete node; return true;});
 }
 
+template <typename NT>
+bool checkNodes(NT *root) {
+    bool ok = true;
+    PostOrderTravRecur<NT>(root, [&ok](auto ptr){
+        if (ptr->getLeft() && ptr->getLeft()->getParent() != ptr) {
+            ok = false;
+            return false;
+        }
+        if (ptr->getRight() && ptr->getRight()->getParent() != ptr) {
+            ok = false;
+            return false;
+        }
+        return true;
+    });
+    return ok;
+}
+
 TEST(test, unlink) {
     auto n1 = BSTNode<int>(1);
     auto n2 = BSTNode<int>(2);
@@ -77,14 +94,18 @@ TEST(test, unlink) {
     n5.setRight(&n6);
     n6.setParent(&n5);
 
+    ASSERT_EQ(checkNodes(&n2), true);
+
     auto root = BstUnlinkNode<int>(&n2, &n2);
+    ASSERT_EQ(checkNodes(root), true);
     ASSERT_EQ(root, &n3);
     ASSERT_EQ(root->getRight(), &n5);
     ASSERT_EQ(n5.getLeft(), &n4);
 
     auto root2 = BstUnlinkNode<int>(root, &n5);
+    ASSERT_EQ(checkNodes(root), true);
     ASSERT_EQ(root2, root);
     ASSERT_EQ(root->getRight(), &n6);
     ASSERT_EQ(n6.getRight(), nullptr);
-    ASSERT_EQ(n6.getLeft(), nullptr);
+    ASSERT_EQ(n6.getLeft(), &n4);
 }

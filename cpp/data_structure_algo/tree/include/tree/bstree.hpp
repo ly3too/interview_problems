@@ -191,15 +191,15 @@ NT *BstUnlinkNode(NT *root, NT *node) {
         return root;
     }
 
-    auto left = node->getLeft();
+    auto const left = node->getLeft();
     auto right = node->getRight();
+    auto const parent = node->getParent();
     // single child, move child up
     if (!left || !right) {
         auto next = left;
         if (right) {
             next = right;
         }
-        auto parent = node->getParent();
         // delete the root node
         if (!parent) {
             if (next) {
@@ -219,11 +219,11 @@ NT *BstUnlinkNode(NT *root, NT *node) {
     }
 
     // find the left most right child, which must has children count of less or equal to 1
-    auto successor = findLeftMost(node->getRight());
+    auto successor = findLeftMost(right);
     // unlink it from tree of right tree
     BstUnlinkNode<T, NT>(node, successor);
     // reset parent link
-    auto parent = node->getParent();
+    successor->setParent(parent);
     if (!parent) {
         root = successor;
     } else {
@@ -234,9 +234,13 @@ NT *BstUnlinkNode(NT *root, NT *node) {
         }
     }
     // swap the link
-    successor->setLeft(node->getLeft());
-    successor->setRight(node->getRight());
-    successor->setParent(node->getParent());
+    successor->setLeft(left);
+    left->setParent(successor);
+    right = node->getRight();
+    successor->setRight(right);
+    if (right) {
+        right->setParent(successor);
+    }
     return root;
 }
 
