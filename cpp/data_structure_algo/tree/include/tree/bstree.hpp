@@ -56,7 +56,7 @@ struct BSTAugNode: public BaseNode<BSTAugNode<T, AT>> {
  * @return
  */
 template <typename T, typename NT = BSTNode<T>, typename Cmp = std::less<T>>
-std::tuple<NT *, NT *> BstSearch(NT *root, const T &val, const Cmp &cmp = Cmp()) {
+std::tuple<NT *, NT *> BstSearchHelper(NT *root, const T &val, const Cmp &cmp = Cmp()) {
     using PN = NT *; // Pointer of node
     PN next_larger = nullptr;
     PN next_smaller = nullptr;
@@ -75,12 +75,30 @@ std::tuple<NT *, NT *> BstSearch(NT *root, const T &val, const Cmp &cmp = Cmp())
 }
 
 template <typename T, typename NT = BSTNode<T>, typename Cmp = std::less<T>>
+NT *BstSearch(NT *root, const T &val, const Cmp &cmp = Cmp()) {
+    using PN = NT *; // Pointer of node
+    PN next_smaller = nullptr;
+    PN next_larger = nullptr;
+
+    std::tie(next_smaller, next_larger) = BstSearchHelper<T, NT, Cmp>(root, val, cmp);
+    // smaller node is not smaller
+    if (next_smaller && !cmp(next_smaller->val, val)) {
+        return next_smaller;
+    }
+    // larger node is smaller or eq
+    if (next_larger && cmp(next_larger->val, val)) {
+        return next_larger;
+    }
+    return nullptr;
+}
+
+template <typename T, typename NT = BSTNode<T>, typename Cmp = std::less<T>>
 NT *BstInsert(NT *root, NT *node, const Cmp &cmp = Cmp()) {
     using PN = NT *; // Pointer of node
     PN next_smaller = nullptr;
     PN next_larger = nullptr;
 
-    std::tie(next_smaller, next_larger) = BstSearch<T, NT, Cmp>(root, node->val, cmp);
+    std::tie(next_smaller, next_larger) = BstSearchHelper<T, NT, Cmp>(root, node->val, cmp);
 
     node->setLeft(nullptr);
     node->setRight(nullptr);
@@ -92,7 +110,7 @@ NT *BstInsert(NT *root, NT *node, const Cmp &cmp = Cmp()) {
     } else if (next_larger && next_larger->getLeft() == nullptr) {
         // insert to larger node's left
         next_larger->setLeft(node);
-        node->setParent(node);
+        node->setParent(next_larger);
         return node;
     }
 
@@ -101,4 +119,141 @@ NT *BstInsert(NT *root, NT *node, const Cmp &cmp = Cmp()) {
     return node;
 }
 
+/**
+ * find the left most node
+ * @tparam NT
+ * @param root root of tree, must not be null
+ * @return
+ */
+template<typename NT>
+inline NT *findLeftMost(NT *root) {
+    while(root->getLeft()) {
+        root = root->getLeft();
+    }
+    return root;
 }
+
+/**
+ * find the right most node
+ * @tparam NT
+ * @param root root of tree, must not be null
+ * @return
+ */
+template<typename NT>
+inline NT *findRightMost(NT *root) {
+    while(root->getRight()) {
+        root = root->getRight();
+    }
+    return root;
+}
+
+/**
+ * find the first parent to the right
+ *
+ * @tparam NT
+ * @param root
+ * @return
+ */
+template<typename NT>
+inline NT *findFirstRightParent(NT *root) {
+    while (root->getParent() && root->getParent()->getLeft() != root) {
+        root = root->getParent();
+    }
+    return root->getParent();
+}
+
+/**
+ * find the first parent to the left
+ *
+ * @tparam NT
+ * @param root
+ * @return
+ */
+template<typename NT>
+inline NT *findFirstLeftParent(NT *root) {
+    while (root->getParent() && root->getParent()->right != root) {
+        root = root->getParent();
+    }
+    return root->getParent();
+}
+
+template <typename T, typename NT = BSTNode<T>>
+class BstConstIterator {
+public:
+    using value_type = T;
+    using node_type = NT;
+protected:
+    node_type *m_node = nullptr;
+public:
+    explicit BstConstIterator(node_type *node): m_node(node) {}
+    BstConstIterator(const BstConstIterator &other) = default;
+    BstConstIterator(BstConstIterator &&other) = default;
+
+    const value_type &operator*() const {
+        return m_node->val;
+    }
+
+    const value_type *operator->() const {
+        return &m_node->val;
+    }
+
+    bool operator==(const BstConstIterator &other) const {
+        return m_node == other.m_node;
+    }
+
+    bool operator!=(const BstConstIterator &other) const {
+        return m_node != other.m_node;
+    }
+
+    BstConstIterator &operator++() {
+        if (m_node->getRight()) {
+            m_node = findLeftMost(m_node->getRight());
+            return *this;
+        }
+        m_node = findFirstRightParent(m_node);
+        return *this;
+    }
+
+    BstConstIterator &operator--() {
+        if (m_node->getLeft()) {
+            m_node = findRightMost(m_node->getLeft());
+            return *this;
+        }
+        m_node = findFirstLeftParent(m_node);
+        return *this;
+    }
+
+    BstConstIterator operator++(int) {
+        auto ret = BstConstIterator(*this);
+        ++(*this);
+        return ret;
+    }
+
+    BstConstIterator operator--(int) {
+        auto ret = BstConstIterator(*this);
+        --(*this);
+        return ret;
+    }
+};
+
+template <typename T, typename NT = BSTNode<T>>
+class BstIterator: public BstConstIterator<T, NT> {
+public:
+    using value_type = T;
+    using node_type = NT;
+
+protected:
+
+public:
+    explicit BstIterator(node_type *node): BstConstIterator<T, NT>(node) {}
+
+    value_type &operator*() {
+        return BstConstIterator<T, NT>::m_node->val;
+    }
+
+    value_type *operator->() {
+        return &BstConstIterator<T, NT>::m_node->val;
+    }
+};
+
+};
