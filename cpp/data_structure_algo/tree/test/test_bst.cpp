@@ -5,6 +5,6 @@
 using namespace std;
 
 
-TEST(test, bst) {
-    map<int, int> map;
+TEST(test, bst_search) {
+
 }

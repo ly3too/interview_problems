@@ -18,6 +18,14 @@ namespace btree {
         inline NT *getRight() {
             return right;
         }
+
+        inline void setLeft(NT *l) {
+            left = l;
+        }
+
+        inline void setRight(NT *r) {
+            right = r;
+        }
     };
 
     template<typename T>
@@ -36,19 +44,19 @@ namespace btree {
      * @param call call on each node, return true if continue else return false
      * @return return the last node which call return false
      */
-    template <typename T>
-    Node<T> * InOrderTravRecur(Node<T> *root, const std::function<bool (Node<T> *)> &call) {
+    template <typename NT, typename Call = std::function<bool (NT *)>>
+    NT *InOrderTravRecur(NT *root, const Call &call) {
         if (!root) {
             return nullptr;
         }
-        auto left = InOrderTravRecur(root->getLeft(), call);
+        auto left = InOrderTravRecur<NT, Call>(root->getLeft(), call);
         if (left) {
             return left;
         }
         if (call(root) == false) {
             return root;
         }
-        return InOrderTravRecur(root->getRight(), call);
+        return InOrderTravRecur<NT, Call>(root->getRight(), call);
     }
 
     /**
@@ -58,16 +66,16 @@ namespace btree {
      * @param call call on each node, return true if continue else return false
      * @return return the node which call returns false, otherwise nullptr
      */
-    template <typename T>
-    Node<T> * PostOrderTravRecur(Node<T> *root, const std::function<bool (Node<T> *)> &call) {
+    template <typename NT, typename Call = std::function<bool (NT *)>>
+    NT *PostOrderTravRecur(NT *root, const Call &call) {
         if (!root) {
             return nullptr;
         }
-        auto left = PostOrderTravRecur(root->getLeft(), call);
+        auto left = PostOrderTravRecur<NT, Call>(root->getLeft(), call);
         if (left) {
             return left;
         }
-        auto right = PostOrderTravRecur(root->getRight(), call);
+        auto right = PostOrderTravRecur<NT, Call>(root->getRight(), call);
         if (right) {
             return right;
         }
@@ -84,19 +92,19 @@ namespace btree {
      * @param call call on each node, return true if continue else return false
      * @return return the node which call returns false, otherwise nullptr
      */
-    template <typename T>
-    Node<T> * PreOrderTravRecur(Node<T> *root, const std::function<bool (Node<T> *)> &call) {
+    template <typename NT, typename Call = std::function<bool (NT *)>>
+    NT * PreOrderTravRecur(NT *root, const Call &call) {
         if (!root) {
             return nullptr;
         }
         if (call(root) == false) {
             return root;
         }
-        auto left = PreOrderTravRecur(root->getLeft(), call);
+        auto left = PreOrderTravRecur<NT, Call>(root->getLeft(), call);
         if (left) {
             return left;
         }
-        return PreOrderTravRecur(root->getRight(), call);
+        return PreOrderTravRecur<NT, Call>(root->getRight(), call);
     }
 
     /**
@@ -106,7 +114,7 @@ namespace btree {
      * @param call call on each node, return true if continue else return false
      * @return return the last node which call return false
      */
-    template <typename T, typename NT = Node<T>, typename Call = std::function<bool (NT *)>>
+    template <typename NT, typename Call = std::function<bool (NT *)>>
     NT *InOrderTrav(NT *root, const Call &call) {
         if (!root) {
             return nullptr;
@@ -143,7 +151,7 @@ namespace btree {
      * @param call call on each node, return true if continue else return false
      * @return return the last node which call return false
      */
-    template <typename T, typename NT = Node<T>, typename Call = std::function<bool (NT *)>>
+    template <typename NT, typename Call = std::function<bool (NT *)>>
     NT *PreOrderTrav(NT *root, const Call &call) {
         if (!root) {
             return nullptr;
@@ -180,7 +188,7 @@ namespace btree {
      * @param call call on each node, return true if continue else return false
      * @return return the last node which call return false
      */
-    template <typename T, typename NT = Node<T>, typename Call = std::function<bool (NT *)>>
+    template <typename NT, typename Call = std::function<bool (NT *)>>
     NT *PostOrderTrav(NT *root, const Call &call) {
         if (!root) {
             return nullptr;

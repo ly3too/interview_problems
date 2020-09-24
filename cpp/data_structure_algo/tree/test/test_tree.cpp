@@ -33,23 +33,23 @@ TEST(test, tree) {
     // in order
     vector<int> out;
     auto func = [&out](Node<int> *ptr) {out.emplace_back(ptr->val); return true;};
-    auto ret = InOrderTravRecur<int>(n3, func);
+    auto ret = InOrderTravRecur<Node<int>>(n3, func);
     ASSERT_EQ(ret, nullptr);
     ASSERT_EQ(out, vector<int>({1, 2, 3, 4, 5, 6, 7}));
 
     out.clear();
-    ret = InOrderTravRecur<int>(n3, [&out](auto ptr){
+    ret = InOrderTravRecur<Node<int>>(n3, [&out](auto ptr){
         out.emplace_back(ptr->val); return ptr->val != 6;});
     ASSERT_EQ(ret, n6);
     ASSERT_EQ(out, vector<int>({1, 2, 3, 4, 5, 6}));
 
     out.clear();
-    ret = InOrderTrav<int>(n3, func);
+    ret = InOrderTrav<Node<int>>(n3, func);
     ASSERT_EQ(ret, nullptr);
     ASSERT_EQ(out, vector<int>({1, 2, 3, 4, 5, 6, 7}));
 
     out.clear();
-    ret = reinterpret_cast<Node<int> *>(InOrderTrav<int, MirrNode<int>>(
+    ret = reinterpret_cast<Node<int> *>(InOrderTrav<MirrNode<int>>(
             reinterpret_cast<MirrNode<int> *>(n3), [&out](auto ptr){
                 out.emplace_back(ptr->val);
                 return true;
@@ -59,23 +59,23 @@ TEST(test, tree) {
 
     // pre order
     out.clear();
-    ret = PreOrderTravRecur<int>(n3, func);
+    ret = PreOrderTravRecur<Node<int>>(n3, func);
     ASSERT_EQ(ret, nullptr);
     ASSERT_EQ(out, vector<int>({3, 2, 1, 5, 4, 6, 7}));
 
     out.clear();
-    ret = PreOrderTrav<int>(n3, func);
+    ret = PreOrderTrav<Node<int>>(n3, func);
     ASSERT_EQ(ret, nullptr);
     ASSERT_EQ(out, vector<int>({3, 2, 1, 5, 4, 6, 7}));
 
     // post order
     out.clear();
-    ret = PostOrderTravRecur<int>(n3, func);
+    ret = PostOrderTravRecur<Node<int>>(n3, func);
     ASSERT_EQ(ret, nullptr);
     ASSERT_EQ(out, vector<int>({1, 2, 4, 7, 6, 5, 3}));
 
     out.clear();
-    ret = PostOrderTrav<int>(n3, func);
+    ret = PostOrderTrav<Node<int>>(n3, func);
     ASSERT_EQ(ret, nullptr);
     ASSERT_EQ(out, vector<int>({1, 2, 4, 7, 6, 5, 3}));
 }
