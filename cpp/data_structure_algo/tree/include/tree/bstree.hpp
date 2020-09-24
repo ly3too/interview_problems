@@ -18,12 +18,12 @@ struct BSTBaseNode: public BaseNode<NT> {
 };
 
 template<typename T>
-struct BSTNode: public BaseNode<BSTNode<T>> {
+struct BSTNode: public BSTBaseNode<BSTNode<T>> {
     using value_type = T;
     value_type val;
 
     template<typename ...Args>
-    explicit BSTNode(Args&&... args): BaseNode<BSTNode<T>>(), val(std::forward<Args>(args)...) {}
+    explicit BSTNode(Args&&... args): BSTBaseNode<BSTNode<T>>(), val(std::forward<Args>(args)...) {}
 };
 
 // augmented tree node, red-back tree, avl tree
@@ -80,11 +80,11 @@ NT *BstInsert(NT *root, NT *node, const Cmp &cmp = Cmp()) {
     PN next_smaller = nullptr;
     PN next_larger = nullptr;
 
-    std::tie(next_smaller, next_larger) = BstSearch(node);
+    std::tie(next_smaller, next_larger) = BstSearch<T, NT, Cmp>(root, node->val, cmp);
 
     node->setLeft(nullptr);
     node->setRight(nullptr);
-    if (next_smaller && next_smaller->getRight == nullptr) {
+    if (next_smaller && next_smaller->getRight() == nullptr) {
         // insert to smaller node's right
         next_smaller->setRight(node);
         node->setParent(next_smaller);
