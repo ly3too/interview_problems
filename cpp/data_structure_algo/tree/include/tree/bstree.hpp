@@ -94,7 +94,7 @@ NT *BstSearch(NT *root, const T &val, const Cmp &cmp = Cmp()) {
 }
 
 template <typename T, typename NT = BSTNode<T>, typename Cmp = std::less<T>>
-NT *BstInsert(NT *root, NT *node, const Cmp &cmp = Cmp()) {
+void BstInsert(NT *root, NT *node, const Cmp &cmp = Cmp()) {
     using PN = NT *; // Pointer of node
     PN next_smaller = nullptr;
     PN next_larger = nullptr;

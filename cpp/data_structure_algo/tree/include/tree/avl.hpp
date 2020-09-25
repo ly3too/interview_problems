@@ -76,6 +76,27 @@ public:
     iterator rend() const {
         return iterator(nullptr);
     }
+
+    template<typename Arg>
+    std::pair<iterator, bool> insert(Arg &&arg) {
+        auto node = BstSearch(m_root, arg, m_cmp);
+        if (!node) {
+            node = m_alloc.allocate(1);
+            m_alloc.construct(node, std::forward<Arg>(arg));
+            if (!m_root) {
+                m_root = node;
+            } else {
+                BstInsert(m_root, node);
+            }
+
+            fixUp(node);
+            return std::make_pair(iterator(node), true);
+        }
+
+        auto aug = node->aug;
+        node->val = 
+        return std::make_pair(iterator(node), false);
+    }
 };
 
 }
