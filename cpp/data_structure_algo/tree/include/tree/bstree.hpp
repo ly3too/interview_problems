@@ -28,14 +28,15 @@ struct BSTNode: public BSTBaseNode<BSTNode<T>> {
 
 // augmented tree node, red-back tree, avl tree
 template<typename T, typename AT>
-struct BSTAugNode: public BaseNode<BSTAugNode<T, AT>> {
+struct BSTAugNode: public BSTBaseNode<BSTAugNode<T, AT>> {
     using value_type = T;
     using augment_type = AT;
     value_type val;
     augment_type aug = augment_type();
 
     template<typename ...Args>
-    explicit BSTAugNode(Args&&... args): BaseNode<BSTAugNode<T, AT>>(), val(std::forward<Args>(args)...) {}
+    explicit BSTAugNode(Args&&... args): BSTBaseNode<BSTAugNode<T, AT>>(),
+    val(std::forward<Args>(args)...) {}
 
     template<typename ...Args>
     explicit BSTAugNode(const augment_type &a, Args&&... args):
@@ -323,6 +324,67 @@ public:
     }
 };
 
+/**
+ * rotate left at root, must has right child
+ * @tparam NT
+ * @param root
+ * @return
+ */
+template<typename NT>
+NT *LeftRotate(NT *root) {
+    auto parent = root->getParent();
+    auto new_root = root->getRight();
+    auto nr_left = new_root->getLeft();
 
+    // update left right
+    new_root->setLeft(root);
+    root->setRight(nr_left);
+    // set parent
+    new_root->setParent(parent);
+    root->setParent(new_root);
+    if (parent) {
+        if (parent->getLeft() == root) {
+            parent->setLeft(new_root);
+        } else {
+            parent->setRight(new_root);
+        }
+    }
+    if (nr_left) {
+        nr_left->setParent(root);
+    }
+
+    return new_root;
+}
+
+/**
+ * roraote right at root, must has left child
+ * @tparam NT
+ * @param root
+ * @return
+ */
+template<typename NT>
+NT *RightRotate(NT *root) {
+    auto parent = root->getParent();
+    auto new_root = root->getLeft();
+    auto nr_right = new_root->getRight();
+
+    // set left and right
+    new_root->setRight(root);
+    root->setLeft(nr_right);
+    // update parent
+    new_root->setParent(parent);
+    root->setParent(new_root);
+    if (parent) {
+        if (parent->getLeft() == root) {
+            parent->setLeft(new_root);
+        } else {
+            parent->setRight(new_root);
+        }
+    }
+    if (nr_right) {
+        nr_right->setParent(root);
+    }
+    return new_root;
+}
 
 };

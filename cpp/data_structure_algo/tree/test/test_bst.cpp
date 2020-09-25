@@ -109,3 +109,46 @@ TEST(test, unlink) {
     ASSERT_EQ(n6.getRight(), nullptr);
     ASSERT_EQ(n6.getLeft(), &n4);
 }
+
+TEST(test, rotate) {
+
+    auto n1 = BSTAugNode<int, int>(1);
+    auto n2 = BSTAugNode<int, int>(2);
+    auto n3 = BSTAugNode<int, int>(3);
+    auto n4 = BSTAugNode<int, int>(4);
+    auto n5 = BSTAugNode<int, int>(5);
+
+    n2.setLeft(&n1);
+    n1.setParent(&n2);
+    n2.setRight(&n3);
+    n3.setParent(&n2);
+    n3.setLeft(&n4);
+    n4.setParent(&n3);
+    n3.setRight(&n5);
+    n5.setParent(&n3);
+
+    auto root = &n2;
+    ASSERT_TRUE(checkNodes(root));
+
+    // left rotate
+    auto ret = LeftRotate(&n3);
+    ASSERT_EQ(ret, &n5);
+    ASSERT_EQ(ret->getLeft(), &n3);
+    ASSERT_EQ(ret->getRight(), nullptr);
+    ASSERT_EQ(ret->getLeft()->getRight(), nullptr);
+    ASSERT_TRUE(checkNodes(root));
+
+    // right rotate back
+    ret = RightRotate(ret);
+    ASSERT_EQ(ret, &n3);
+    ASSERT_EQ(ret->getRight(), &n5);
+    ASSERT_EQ(ret->getLeft(), &n4);
+    ASSERT_TRUE(checkNodes(root));
+
+    // left rotate at root
+    root = LeftRotate(root);
+    ASSERT_EQ(root, &n3);
+    ASSERT_EQ(root->getLeft(), &n2);
+    ASSERT_EQ(root->getRight(), &n5);
+    ASSERT_TRUE(checkNodes(root));
+}
