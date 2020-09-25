@@ -38,9 +38,9 @@ struct BSTAugNode: public BSTBaseNode<BSTAugNode<T, AT>> {
     explicit BSTAugNode(Args&&... args): BSTBaseNode<BSTAugNode<T, AT>>(),
     val(std::forward<Args>(args)...) {}
 
-    template<typename ...Args>
-    explicit BSTAugNode(const augment_type &a, Args&&... args):
-    BaseNode<BSTAugNode<T, AT>>(), val(std::forward<Args>(args)...), aug(a) {}
+//    template<typename ...Args>
+//    explicit BSTAugNode(const augment_type &a, Args&&... args):
+//    BaseNode<BSTAugNode<T, AT>>(), val(std::forward<Args>(args)...), aug(a) {}
 };
 
 /**
