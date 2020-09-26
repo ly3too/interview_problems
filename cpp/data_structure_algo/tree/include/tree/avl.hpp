@@ -136,7 +136,8 @@ public:
     }
 
     // warning return no const iterator for simplicity
-    iterator find(const value_type &val) const {
+    iterator find(const key_type &key) const {
+        value_type val{key, {}};
         auto node = BstSearch(m_root, val, m_cmp);
         return iterator(node);
     }

@@ -1,8 +1,10 @@
 #include "gtest/gtest.h"
 #include "tree/avl.hpp"
+#include <chrono>
 
 using namespace std;
 using namespace bstree;
+using namespace std::chrono;
 
 template<typename Key, typename Val, typename Cmp = std::less<Key>,
         typename Alloc = std::allocator<std::pair<Key, Val>>>
@@ -53,7 +55,7 @@ TEST(test, avl) {
     // test find and erase
     for (auto i = 50; i < 70; ++i) {
         //test find
-        auto it = tree.find({i, i});
+        auto it = tree.find(i);
         ASSERT_EQ(it->first, i);
         it = tree.erase(it);
         ASSERT_TRUE(tree.checkTree());
@@ -62,6 +64,42 @@ TEST(test, avl) {
     }
 
     tree.print();
+}
+
+template<typename Map>
+void testMap(Map &t, int cnt) {
+    auto cnt2 = cnt;
+    while(cnt2--) {
+        t.insert(make_pair(cnt2, cnt2));
+    }
+    cnt2 = cnt;
+    while(cnt2--) {
+        t.erase(t.find(cnt2));
+    }
+}
+
+TEST(test, perf) {
+
+    auto total_run = 100;
+    auto elem_cnt = 1000;
+
+    auto t1 = steady_clock::now();
+    for (int i = 0; i < total_run; ++i) {
+        auto t = map<int, int>();
+        testMap(t, elem_cnt);
+    }
+    auto t2 = steady_clock::now();
+    std::chrono::duration<double> diff = t2 - t1;
+    cout << "map: " << diff.count() << endl;
+
+    auto t3 = steady_clock::now();
+    for (int i = 0; i < total_run; ++i) {
+        auto t = AVLMap<int, int>();
+        testMap(t, elem_cnt);
+    }
+    auto t4 = steady_clock::now();
+    std::chrono::duration<double> diff2 = t4 - t3;
+    cout << "avl map: " << diff2.count() << endl;
 }
 
 

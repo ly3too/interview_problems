@@ -78,6 +78,7 @@ TEST(test, tree) {
     ret = PostOrderTrav<Node<int>>(n3, func);
     ASSERT_EQ(ret, nullptr);
     ASSERT_EQ(out, vector<int>({1, 2, 4, 7, 6, 5, 3}));
+    PostOrderTravRecur(n3, [](auto ptr){delete ptr; return true;});
 }
 
 int main() {
