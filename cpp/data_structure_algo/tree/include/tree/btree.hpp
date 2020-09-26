@@ -2,6 +2,7 @@
 
 #include <utility>
 #include <functional>
+#include <ostream>
 #include "stack/stack.hpp"
 
 namespace btree {
@@ -217,4 +218,26 @@ namespace btree {
         }
         return nullptr;
     }
+
+template<typename NT, typename Format = std::function<std::string(NT *)>>
+void PrintTree(std::ostream &out, NT *node, const Format &ft = [](auto ptr){return std::to_string(ptr->val);}, const std::string& pre = "") {
+    if (!node) {
+        return;
+    }
+
+    auto parent = node->getParent();
+    if (!parent) {
+        PrintTree(out, node->getRight(), ft, pre);
+        out << ft(node) << std::endl;
+        PrintTree(out, node->getLeft(), ft, pre);
+    } else if (parent->getLeft() == node) {
+        PrintTree<NT, Format>(out, node->getRight(), ft, pre + " | ");
+        out << pre << "  \\" << ft(node) << std::endl;
+        PrintTree<NT, Format>(out, node->getLeft(), ft, pre + "   ");
+    } else {
+        PrintTree<NT, Format>(out, node->getRight(), ft, pre + "   ");
+        out << pre << "  /" << ft(node) << std::endl;
+        PrintTree<NT, Format>(out, node->getLeft(), ft, pre + " | ");
+    }
+}
 }

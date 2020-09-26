@@ -22,6 +22,7 @@ TEST(test, bst_search) {
         vec.emplace_back(val);
         BstInsert<int>(root, node);
     }
+    PrintTree(cout, root);
 
     // should be sorted
     auto vec2 = vector<int>();
@@ -96,15 +97,15 @@ TEST(test, unlink) {
 
     ASSERT_EQ(checkNodes(&n2), true);
 
-    auto root = BstUnlinkNode<int>(&n2, &n2);
+    auto root = BstUnlinkNode(&n2);
     ASSERT_EQ(checkNodes(root), true);
     ASSERT_EQ(root, &n3);
     ASSERT_EQ(root->getRight(), &n5);
     ASSERT_EQ(n5.getLeft(), &n4);
 
-    auto root2 = BstUnlinkNode<int>(root, &n5);
+    auto ret = BstUnlinkNode(&n5);
     ASSERT_EQ(checkNodes(root), true);
-    ASSERT_EQ(root2, root);
+    ASSERT_EQ(ret, &n6);
     ASSERT_EQ(root->getRight(), &n6);
     ASSERT_EQ(n6.getRight(), nullptr);
     ASSERT_EQ(n6.getLeft(), &n4);

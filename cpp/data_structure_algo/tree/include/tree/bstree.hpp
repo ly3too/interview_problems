@@ -107,17 +107,16 @@ void BstInsert(NT *root, NT *node, const Cmp &cmp = Cmp()) {
         // insert to smaller node's right
         next_smaller->setRight(node);
         node->setParent(next_smaller);
-        return node;
+        return;
     } else if (next_larger && next_larger->getLeft() == nullptr) {
         // insert to larger node's left
         next_larger->setLeft(node);
         node->setParent(next_larger);
-        return node;
+        return;
     }
 
     // no node found
     node->setParent(nullptr);
-    return node;
 }
 
 /**
@@ -182,19 +181,19 @@ inline NT *findFirstLeftParent(NT *root) {
  * unlink node from a tree, node must exist
  * @tparam T
  * @tparam NT
- * @param root
  * @param node
- * @return
+ * @param cb call back will be call with deleted node's parent and the successor
+ * @return next node after unlink
  */
-template <typename T, typename NT = BSTNode<T>>
-NT *BstUnlinkNode(NT *root, NT *node) {
+template <typename NT, typename Cb = std::function<void(NT *, NT *)>>
+NT *BstUnlinkNode(NT *node, const Cb &cb = [](auto parent, auto next){}) {
     if (!node) {
-        return root;
+        return nullptr;
     }
 
-    auto const left = node->getLeft();
+    auto left = node->getLeft();
     auto right = node->getRight();
-    auto const parent = node->getParent();
+    auto parent = node->getParent();
     // single child, move child up
     if (!left || !right) {
         auto next = left;
@@ -206,6 +205,7 @@ NT *BstUnlinkNode(NT *root, NT *node) {
             if (next) {
                 next->setParent(nullptr);
             }
+            cb(parent, next);
             return next;
         }
 
@@ -216,18 +216,20 @@ NT *BstUnlinkNode(NT *root, NT *node) {
         }
         if (next)
             next->setParent(parent);
-        return root;
+        cb(parent, next);
+        return next;
     }
 
     // find the left most right child, which must has children count of less or equal to 1
     auto successor = findLeftMost(right);
-    // unlink it from tree of right tree
-    BstUnlinkNode<T, NT>(node, successor);
+    BstUnlinkNode<NT, Cb>(successor, cb);
+
     // reset parent link
+    left = node->getLeft();
+    right = node->getRight();
+    parent = node->getParent();
     successor->setParent(parent);
-    if (!parent) {
-        root = successor;
-    } else {
+    if (parent) {
         if (parent->getLeft() == node) {
             parent->setLeft(successor);
         } else {
@@ -236,13 +238,15 @@ NT *BstUnlinkNode(NT *root, NT *node) {
     }
     // swap the link
     successor->setLeft(left);
-    left->setParent(successor);
-    right = node->getRight();
+    if (left) {
+        left->setParent(successor);
+    }
     successor->setRight(right);
     if (right) {
         right->setParent(successor);
     }
-    return root;
+    cb(parent, successor);
+    return successor;
 }
 
 template <typename T, typename NT = BSTNode<T>>
@@ -254,8 +258,6 @@ protected:
     node_type *m_node = nullptr;
 public:
     explicit BstConstIterator(node_type *node): m_node(node) {}
-    BstConstIterator(const BstConstIterator &other) = default;
-    BstConstIterator(BstConstIterator &&other) = default;
 
     const value_type &operator*() const {
         return m_node->val;
@@ -302,6 +304,10 @@ public:
         --(*this);
         return ret;
     }
+
+    node_type *getNode() const {
+        return m_node;
+    }
 };
 
 template <typename T, typename NT = BSTNode<T>>
@@ -315,11 +321,11 @@ protected:
 public:
     explicit BstIterator(node_type *node): BstConstIterator<T, NT>(node) {}
 
-    value_type &operator*() {
+    value_type &operator*() const {
         return BstConstIterator<T, NT>::m_node->val;
     }
 
-    value_type *operator->() {
+    value_type *operator->() const {
         return &BstConstIterator<T, NT>::m_node->val;
     }
 };

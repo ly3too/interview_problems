@@ -17,23 +17,98 @@ public:
 
 protected:
     using node_type = BSTAugNode<value_type, int>;
-    using node_alloc_type = typename Alloc::template rebind<node_type>::type;
-
-    node_type *m_root = nullptr;
-    node_alloc_type m_alloc = node_alloc_type();
-    key_compare m_cmp = key_compare();
-    size_type m_count = 0;
+    using node_alloc_type = typename Alloc::template rebind<node_type>::other;
 
     class PairKeyCmp {
     protected:
-        const key_compare &m_cmp;
+        key_compare m_cmp;
     public:
         PairKeyCmp(const key_compare &cmp): m_cmp(cmp) {}
 
-        bool operator()(const value_type &l, const value_type &r) {
+        bool operator()(const value_type &l, const value_type &r) const {
             return m_cmp(l.first, r.first);
         }
     };
+
+    node_type *m_root = nullptr;
+    node_alloc_type m_alloc = node_alloc_type();
+    PairKeyCmp m_cmp;
+    size_type m_count = 0;
+
+    inline static int getHight(node_type *node) {
+        if (node) {
+            return node->aug;
+        } else {
+            return 0;
+        }
+    }
+
+    inline static void updateNodeHight(node_type *node) {
+        node->aug = std::max(getHight(node->getLeft()), getHight(node->getRight())) + 1;
+    }
+
+    inline static void leftRotateUpdate(node_type *node) {
+        LeftRotate(node);
+        updateNodeHight(node);
+        updateNodeHight(node->getParent());
+    }
+
+    inline static void rightRorateUpdate(node_type *node) {
+        RightRotate(node);
+        updateNodeHight(node);
+        updateNodeHight(node->getParent());
+    }
+
+    void fixUp(node_type *node) {
+        while (node) {
+            auto left = node->getLeft();
+            auto right = node->getRight();
+            auto parent = node->getParent();
+            auto left_hight = getHight(left);
+            auto right_hight = getHight(right);
+            node->aug = std::max(left_hight, right_hight) + 1;
+            auto diff = left_hight - right_hight;
+            if (diff <= 1 && diff >= -1) {
+                node = parent;
+                continue;
+            }
+
+            // found the first unbalanced node, rotate, then we are done
+            if (diff > 1) {
+                // left-left case
+                if (getHight(left->getLeft()) > getHight(left->getRight())) {
+                    // node became child of left
+                    rightRorateUpdate(node);
+                    if (!parent) {
+                        m_root = left;
+                    }
+                    return;
+                }
+                // left-right case
+                leftRotateUpdate(left);
+                rightRorateUpdate(node);
+                if (!parent) {
+                    m_root = node->getParent();
+                }
+                return;
+            }
+            if (getHight(right->getRight()) > getHight(right->getLeft())) {
+                // right-right case
+                leftRotateUpdate(node);
+                if (!parent) {
+                    m_root = right;
+                }
+                return;
+            }
+            // right-left case
+            rightRorateUpdate(right);
+            leftRotateUpdate(node);
+            if (!parent) {
+                m_root = node->getParent();
+            }
+            return;
+        }
+    }
 
 public:
     using iterator = BstIterator<value_type, node_type>;
@@ -46,6 +121,7 @@ public:
         PostOrderTrav(m_root, [&](auto ptr){
             m_alloc.destroy(ptr);
             m_alloc.deallocate(ptr, 1);
+            return true;
         });
         m_root = nullptr;
         m_count = 0;
@@ -55,9 +131,13 @@ public:
         clear();
     }
 
+    size_type size() const {
+        return m_count;
+    }
+
     // warning return no const iterator for simplicity
     iterator find(const value_type &val) const {
-        auto node = BstSearch(m_root, val, PairKeyCmp(m_cmp));
+        auto node = BstSearch(m_root, val, m_cmp);
         return iterator(node);
     }
 
@@ -86,16 +166,39 @@ public:
             if (!m_root) {
                 m_root = node;
             } else {
-                BstInsert(m_root, node);
+                BstInsert<value_type, node_type>(m_root, node, m_cmp);
             }
 
+            ++m_count;
             fixUp(node);
             return std::make_pair(iterator(node), true);
         }
 
-        auto aug = node->aug;
-        node->val = 
+        if (std::is_rvalue_reference<Arg>::value) {
+            node->val.second = std::move(arg.second);
+        } else {
+            node->val.second = arg.second;
+        }
         return std::make_pair(iterator(node), false);
+    }
+
+    iterator erase(iterator pos) {
+        auto node = pos.getNode();
+        ++pos;
+        auto ret = BstUnlinkNode(node, [&](auto parent, auto next) {
+            if (next) {
+                fixUp(next);
+            } else {
+                fixUp(parent);
+            }
+        });
+        if (m_root == node) {
+            m_root = ret;
+        }
+        m_alloc.destroy(node);
+        m_alloc.deallocate(node, 1);
+        --m_count;
+        return pos;
     }
 };
 
