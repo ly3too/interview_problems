@@ -10,7 +10,7 @@ class AVLMap {
 public:
     using key_type = Key;
     using mapped_type = Val;
-    using value_type = std::pair<const key_type, mapped_type>;
+    using value_type = std::pair<key_type, mapped_type>;
     using size_type = std::size_t;
     using allocator_type = Alloc;
     using key_compare = Cmp;
@@ -47,16 +47,22 @@ protected:
         node->aug = std::max(getHight(node->getLeft()), getHight(node->getRight())) + 1;
     }
 
-    inline static void leftRotateUpdate(node_type *node) {
+    inline void leftRotateUpdate(node_type *node) {
         LeftRotate(node);
         updateNodeHight(node);
         updateNodeHight(node->getParent());
+        if (node == m_root) {
+            m_root = node->getParent();
+        }
     }
 
-    inline static void rightRorateUpdate(node_type *node) {
+    inline void rightRorateUpdate(node_type *node) {
         RightRotate(node);
         updateNodeHight(node);
         updateNodeHight(node->getParent());
+        if (node == m_root) {
+            m_root = node->getParent();
+        }
     }
 
     void fixUp(node_type *node) {
@@ -79,33 +85,21 @@ protected:
                 if (getHight(left->getLeft()) > getHight(left->getRight())) {
                     // node became child of left
                     rightRorateUpdate(node);
-                    if (!parent) {
-                        m_root = left;
-                    }
                     return;
                 }
                 // left-right case
                 leftRotateUpdate(left);
                 rightRorateUpdate(node);
-                if (!parent) {
-                    m_root = node->getParent();
-                }
                 return;
             }
             if (getHight(right->getRight()) > getHight(right->getLeft())) {
                 // right-right case
                 leftRotateUpdate(node);
-                if (!parent) {
-                    m_root = right;
-                }
                 return;
             }
             // right-left case
             rightRorateUpdate(right);
             leftRotateUpdate(node);
-            if (!parent) {
-                m_root = node->getParent();
-            }
             return;
         }
     }
@@ -160,14 +154,30 @@ public:
 
     template<typename Arg>
     std::pair<iterator, bool> insert(Arg &&arg) {
-        auto node = BstSearch(m_root, arg, m_cmp);
+        node_type *prev;
+        node_type *next;
+        std::tie(prev, next) = BstSearchHelper(m_root, arg, m_cmp);
+        node_type *node = nullptr;
+        if (prev && !m_cmp(prev->val, arg)) {
+            node = prev;
+        } else if (next && m_cmp(next->val, arg)) {
+            node = next;
+        }
+
+        // not found
         if (!node) {
             node = m_alloc.allocate(1);
             m_alloc.construct(node, std::forward<Arg>(arg));
             if (!m_root) {
                 m_root = node;
             } else {
-                BstInsert<value_type, node_type>(m_root, node, m_cmp);
+                if (prev) {
+                    prev->setRight(node);
+                    node->setParent(prev);
+                } else if (next) {
+                    next->setLeft(node);
+                    node->setParent(next);
+                }
             }
 
             ++m_count;
@@ -175,6 +185,7 @@ public:
             return std::make_pair(iterator(node), true);
         }
 
+        // found
         if (std::is_rvalue_reference<Arg>::value) {
             node->val.second = std::move(arg.second);
         } else {
@@ -185,14 +196,19 @@ public:
 
     iterator erase(iterator pos) {
         auto node = pos.getNode();
-        ++pos;
-        auto ret = BstUnlinkNode(node, [&](auto parent, auto next) {
-            if (next) {
-                fixUp(next);
-            } else {
-                fixUp(parent);
-            }
-        });
+
+        // node is not leaf, find successor and replace
+        if (node->getLeft() && node->getRight()) {
+            auto successor = findLeftMost(node->getRight());
+            std::swap(node->val, successor->val);
+            std::swap(node, successor);
+        } else {
+            ++pos;
+        }
+
+        auto parent = node->getParent();
+        auto ret = BstUnlinkNode(node);
+        fixUp(parent);
         if (m_root == node) {
             m_root = ret;
         }

@@ -23,6 +23,10 @@ struct TestAVL: public AVLMap<Key, Val, Cmp, Alloc> {
             if (node->getRight() && node->getRight()->getParent() != node) {
                 ret = false;
             }
+            if (!ret) {
+                print();
+                throw runtime_error("failed");
+            }
             return true;
         });
         return ret;
@@ -52,6 +56,8 @@ TEST(test, avl) {
         ASSERT_EQ(item.first, idx);
         ++idx;
     }
+
+    tree.print();
 
     // test find and erase
     for (auto i = 50; i < 70; ++i) {
@@ -173,7 +179,7 @@ void testMap(Map &t, int cnt) {
 TEST(test, perf) {
 
     auto total_run = 100;
-    auto elem_cnt = 1000;
+    auto elem_cnt = 10000;
 
     auto t1 = steady_clock::now();
     for (int i = 0; i < total_run; ++i) {
@@ -192,6 +198,15 @@ TEST(test, perf) {
     auto t4 = steady_clock::now();
     std::chrono::duration<double> diff2 = t4 - t3;
     cout << "avl map: " << diff2.count() << endl;
+
+    auto t5 = steady_clock::now();
+    for (int i = 0; i < total_run; ++i) {
+        auto t = RBMap<int, int>();
+        testMap(t, elem_cnt);
+    }
+    auto t6 = steady_clock::now();
+    std::chrono::duration<double> diff3 = t6 - t5;
+    cout << "rb map: " << diff3.count() << endl;
 }
 
 

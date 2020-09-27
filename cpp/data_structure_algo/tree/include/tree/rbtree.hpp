@@ -201,7 +201,7 @@ protected:
     void fixUpRemove(node_type* node, node_type* parent, node_type* next) {
         // removed root
         if (!parent) {
-            m_root = nullptr;
+            m_root = next;
             return;
         }
 
@@ -294,7 +294,6 @@ public:
         if (node->getLeft() && node->getRight()) {
             auto successor = findLeftMost(node->getRight());
             std::swap(node->val, successor->val);
-            std::swap(node->aug, successor->aug);
             std::swap(node, successor);
         } else {
             ++it;
