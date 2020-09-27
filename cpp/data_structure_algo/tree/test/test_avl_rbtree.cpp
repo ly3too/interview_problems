@@ -71,6 +71,7 @@ template<typename Key, typename Val, typename Cmp = std::less<Key>,
     typename Alloc = std::allocator<std::pair<Key, Val>>>
 struct TestRB: public RBMap<Key, Val, Cmp, Alloc> {
     using Color = typename RBMap<Key, Val, Cmp, Alloc>::Color;
+    using node_type = typename RBMap<Key, Val, Cmp, Alloc>::node_type;
 
 #if (WIN32)
     const string red = "";
@@ -101,8 +102,24 @@ struct TestRB: public RBMap<Key, Val, Cmp, Alloc> {
         });
 
         // check black depth
-
+        cout << "black depth: " << checkBlackDepth(this->m_root) << endl;
         return ret;
+    }
+
+    int checkBlackDepth(node_type* root) {
+        if (!root) {
+            return 0;
+        }
+
+        auto left = checkBlackDepth(root->getLeft());
+        auto right = checkBlackDepth(root->getRight());
+
+        if (left != right) {
+            throw runtime_error("depth invalid");
+        }
+
+        auto cur = root->aug == Color::BLACK ? 1 : 0;
+        return cur + left;
     }
 
     void print() {
@@ -119,9 +136,26 @@ TEST(test, rb) {
     auto rbt = TestRB<int, int>();
     for (auto i = 0; i < 100; ++i) {
         rbt.insert(make_pair(i, i));
+        ASSERT_EQ(rbt.size(), i + 1);
     }
     ASSERT_TRUE(rbt.checkTree());
     rbt.print();
+
+    auto it = rbt.begin();
+    for (int i = 0; i < 100; ++i) {
+        ASSERT_EQ(it->first, i);
+        ++it;
+    }
+    for (int i = 0; i < 100; ++i) {
+        auto ret = rbt.erase(rbt.find(i));
+        ASSERT_EQ(rbt.size(), 100 - i - 1);
+        ASSERT_TRUE(rbt.checkTree());
+        if (i != 99) {
+            ASSERT_EQ(ret->second, i + 1);
+        } else {
+            ASSERT_EQ(ret, rbt.end());
+        }
+    }
 }
 
 template<typename Map>

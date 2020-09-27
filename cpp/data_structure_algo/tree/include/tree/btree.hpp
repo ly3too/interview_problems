@@ -231,13 +231,13 @@ void PrintTree(std::ostream &out, NT *node, const Format &ft = [](auto ptr){retu
         out << ft(node) << std::endl;
         PrintTree(out, node->getLeft(), ft, pre);
     } else if (parent->getLeft() == node) {
-        PrintTree<NT, Format>(out, node->getRight(), ft, pre + " │ ");
+        PrintTree<NT, Format>(out, node->getRight(), ft, pre + " | ");
         out << pre << "  \\" << ft(node) << std::endl;
         PrintTree<NT, Format>(out, node->getLeft(), ft, pre + "   ");
     } else {
         PrintTree<NT, Format>(out, node->getRight(), ft, pre + "   ");
         out << pre << "  /" << ft(node) << std::endl;
-        PrintTree<NT, Format>(out, node->getLeft(), ft, pre + " │ ");
+        PrintTree<NT, Format>(out, node->getLeft(), ft, pre + " | ");
     }
 }
 }

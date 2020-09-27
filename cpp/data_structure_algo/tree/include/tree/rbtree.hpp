@@ -8,7 +8,7 @@ template <typename Key, typename Val, typename Cmp = std::less<Key>,
     typename Alloc = std::allocator<std::pair<const Key, Val>>>
 class RBMap {
 public:
-    using key_type = const Key;
+    using key_type = Key;
     using map_type = Val;
     using key_compare = Cmp;
     using value_type = std::pair<key_type , map_type>;
@@ -108,19 +108,116 @@ protected:
         }
     }
 
-    void fixUpRemove(node_type* node, node_type* parent) {
-        // only one node
+    inline void leftRotateUpdateRoot(node_type *node) {
+        LeftRotate(node);
+        if (node == m_root) {
+            m_root = node->getParent();
+        }
+    }
+
+    inline void rightRotateUpdateRoot(node_type *node) {
+        RightRotate(node);
+        if (node == m_root) {
+            m_root = node->getParent();
+        }
+    }
+
+    void fixDoubleBlack(node_type *node, node_type* parent) {
+        while(true) {
+            // reached root
+            if (node == m_root) {
+                break;
+            }
+            auto is_left = parent->getLeft() == node; // must have sibling
+            auto sib = is_left ? parent->getRight() : parent->getLeft();
+
+            // CASE1: sibling is red, rotate and change it to black case
+            if (sib->aug == Color::RED) {
+                if (is_left) {
+                    leftRotateUpdateRoot(parent);
+                } else {
+                    rightRotateUpdateRoot(parent);
+                }
+                parent->aug = Color::RED;
+                sib->aug = Color::BLACK;
+                continue;
+            }
+
+            // sib is now black
+            auto sib_l_color = getColor(sib->getLeft());
+            auto sib_r_color = getColor(sib->getRight());
+            // CASE2: parent red, sib black, nephews black, switch color of parent and sib, done
+            if (parent->aug == Color::RED && sib_l_color == Color::BLACK && sib_r_color == Color::BLACK) {
+                parent->aug = Color::BLACK;
+                sib->aug = Color::RED;
+                break;
+            }
+
+            // now parent black, sib black
+            // CASE3: parent, sib, sib's children all black; change sib's color to red, move cur node to parent, continue
+            if (sib_l_color == Color::BLACK && sib_r_color == Color::BLACK) {
+                sib->aug = Color::RED;
+                node = parent;
+                parent = node->getParent();
+                continue;
+            }
+
+            // now at lest one nephew is red
+            // CASE4: nephew is right-left case, change to right-right case
+            if (is_left && sib_l_color == Color::RED) {
+                auto sib_l = sib->getLeft();
+                rightRotateUpdateRoot(sib);
+                sib->aug = Color::RED;
+                sib_l->aug = Color::BLACK;
+                sib = sib_l;
+            // CASE5: nephew is left-right case change to left-left
+            } else if (!is_left && sib_r_color == Color::RED) {
+                auto sib_r = sib->getRight();
+                leftRotateUpdateRoot(sib);
+                sib->aug = Color::RED;
+                sib_r->aug = Color::BLACK;
+                sib = sib_r;
+            }
+
+            // CASE6: nephew is right-right case,
+            if (is_left) {
+                auto sib_r = sib->getRight();
+                leftRotateUpdateRoot(parent);
+                std::swap(parent->aug, sib->aug);
+                sib_r->aug = Color::BLACK;
+                break;
+            }
+            // CASE7: nephew is left-left case
+            auto sib_l = sib->getLeft();
+            rightRotateUpdateRoot(parent);
+            std::swap(parent->aug, sib->aug);
+            sib_l->aug = Color::BLACK;
+            break;
+        }
+
+        m_root->aug = Color::BLACK;
+    }
+
+    void fixUpRemove(node_type* node, node_type* parent, node_type* next) {
+        // removed root
         if (!parent) {
             m_root = nullptr;
             return;
         }
 
-        // no need to fix red
+        // CASE1: removed red, no need to fix red
         if (node->aug == Color::RED) {
             return;
         }
 
-        
+        // CASE2: next node is RED, change it to black
+        if (next && next->aug == Color::RED) {
+            next->aug = Color::BLACK;
+            return;
+        }
+
+        // double-black cases
+        fixDoubleBlack(nullptr, parent);
     }
 
     ValCmp m_cmp;       // node comparator
@@ -191,8 +288,7 @@ public:
     }
 
     iterator erase(iterator it) {
-        auto node = *it;
-        ++it;
+        auto node = it.getNode();
 
         // node is not leaf, find successor and replace
         if (node->getLeft() && node->getRight()) {
@@ -200,16 +296,40 @@ public:
             std::swap(node->val, successor->val);
             std::swap(node->aug, successor->aug);
             std::swap(node, successor);
+        } else {
+            ++it;
         }
 
         // now node has at most one child
         auto parent = node->getParent();
-        BstUnlinkNode(node);
-        fixUpRemove(node, parent);
+        auto next = BstUnlinkNode(node);
+        fixUpRemove(node, parent, next);
         m_alloc.destroy(node);
         m_alloc.deallocate(node, 1);
         --m_count;
         return it;
+    }
+
+    iterator begin() const {
+        return iterator(findLeftMost(m_root));
+    }
+
+    iterator end() const {
+        return iterator(nullptr);
+    }
+
+    // need a reverse iterator
+//    iterator rbegin() const {
+//        return iterator(findRightMost(m_root));
+//    }
+//
+//    iterator rend() const {
+//        return iterator(nullptr);
+//    }
+
+    iterator find(const key_type &key) const {
+        auto node = BstSearch(m_root, value_type(key, map_type()), m_cmp);
+        return iterator(node);
     }
 };
 
