@@ -1,5 +1,6 @@
 #include "gtest/gtest.h"
 #include "tree/avl.hpp"
+#include "tree/rbtree.hpp"
 #include <chrono>
 
 using namespace std;
@@ -64,6 +65,63 @@ TEST(test, avl) {
     }
 
     tree.print();
+}
+
+template<typename Key, typename Val, typename Cmp = std::less<Key>,
+    typename Alloc = std::allocator<std::pair<Key, Val>>>
+struct TestRB: public RBMap<Key, Val, Cmp, Alloc> {
+    using Color = typename RBMap<Key, Val, Cmp, Alloc>::Color;
+
+#if (WIN32)
+    const string red = "";
+    const string reset = "";
+#else
+    const string red = "\033[0;31m";
+    const string reset = "\033[0m";
+#endif
+
+    bool checkTree() {
+        auto ret = true;
+        PostOrderTrav(this->m_root, [&](auto node) {
+            // check color: no adjacent red
+            if (node->getLeft() && node->getLeft()->aug == Color::RED && node->aug == Color::RED) {
+                ret = false;
+            }
+            if (node->getRight() && node->getRight()->aug == Color::RED && node->aug == Color::RED) {
+                ret = false;
+            }
+
+            if (node->getLeft() && node->getLeft()->getParent() != node) {
+                ret = false;
+            }
+            if (node->getRight() && node->getRight()->getParent() != node) {
+                ret = false;
+            }
+            return true;
+        });
+
+        // check black depth
+
+        return ret;
+    }
+
+    void print() {
+        PrintTree(cout, this->m_root, [&](auto ptr){
+            if (ptr->aug == Color::BLACK) {
+                return to_string((ptr->val).first) + "(*)";
+            }
+            return red + to_string((ptr->val).first) + reset;
+        });
+    }
+};
+
+TEST(test, rb) {
+    auto rbt = TestRB<int, int>();
+    for (auto i = 0; i < 100; ++i) {
+        rbt.insert(make_pair(i, i));
+    }
+    ASSERT_TRUE(rbt.checkTree());
+    rbt.print();
 }
 
 template<typename Map>
