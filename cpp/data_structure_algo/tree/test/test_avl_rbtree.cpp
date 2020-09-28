@@ -41,14 +41,16 @@ struct TestAVL: public AVLMap<Key, Val, Cmp, Alloc> {
 
 TEST(test, avl) {
     // test insert
+    auto const ele_cnt = 1000;
     auto tree = TestAVL<int, int>();
-    for (auto i = 0; i < 100; ++i) {
+    for (auto i = 0; i < ele_cnt; ++i) {
         tree.insert(make_pair(i, i));
+        ASSERT_TRUE(tree.checkTree());
     }
     for (auto i = 50; i < 100; ++i) {
         tree.insert(make_pair(i, i));
     }
-    ASSERT_TRUE(tree.checkTree());
+    ASSERT_EQ(tree.size(), ele_cnt);
 
     // check item
     auto idx = 0;
@@ -60,16 +62,15 @@ TEST(test, avl) {
     tree.print();
 
     // test find and erase
-    for (auto i = 50; i < 70; ++i) {
+    for (auto i = 50; i < ele_cnt - 1; ++i) {
         //test find
         auto it = tree.find(i);
         ASSERT_EQ(it->first, i);
         it = tree.erase(it);
         ASSERT_TRUE(tree.checkTree());
         ASSERT_EQ(it->second, i + 1);
-        ASSERT_EQ(tree.size(), 100 - (i - 49));
+        ASSERT_EQ(tree.size(), ele_cnt - (i - 49));
     }
-
     tree.print();
 }
 
@@ -106,9 +107,6 @@ struct TestRB: public RBMap<Key, Val, Cmp, Alloc> {
             }
             return true;
         });
-
-        // check black depth
-        cout << "black depth: " << checkBlackDepth(this->m_root) << endl;
         return ret;
     }
 
@@ -139,24 +137,25 @@ struct TestRB: public RBMap<Key, Val, Cmp, Alloc> {
 };
 
 TEST(test, rb) {
+    const auto ele_cnt = 1000;
     auto rbt = TestRB<int, int>();
-    for (auto i = 0; i < 100; ++i) {
+    for (auto i = 0; i < ele_cnt; ++i) {
         rbt.insert(make_pair(i, i));
         ASSERT_EQ(rbt.size(), i + 1);
+        ASSERT_TRUE(rbt.checkTree());
     }
-    ASSERT_TRUE(rbt.checkTree());
     rbt.print();
 
     auto it = rbt.begin();
-    for (int i = 0; i < 100; ++i) {
+    for (int i = 0; i < ele_cnt; ++i) {
         ASSERT_EQ(it->first, i);
         ++it;
     }
-    for (int i = 0; i < 100; ++i) {
+    for (int i = 0; i < ele_cnt; ++i) {
         auto ret = rbt.erase(rbt.find(i));
-        ASSERT_EQ(rbt.size(), 100 - i - 1);
+        ASSERT_EQ(rbt.size(), ele_cnt - i - 1);
         ASSERT_TRUE(rbt.checkTree());
-        if (i != 99) {
+        if (i != ele_cnt - 1) {
             ASSERT_EQ(ret->second, i + 1);
         } else {
             ASSERT_EQ(ret, rbt.end());
@@ -178,8 +177,8 @@ void testMap(Map &t, int cnt) {
 
 TEST(test, perf) {
 
-    auto total_run = 100;
-    auto elem_cnt = 10000;
+    auto total_run = 10;
+    auto elem_cnt = 1000;
 
     auto t1 = steady_clock::now();
     for (int i = 0; i < total_run; ++i) {
@@ -188,7 +187,7 @@ TEST(test, perf) {
     }
     auto t2 = steady_clock::now();
     std::chrono::duration<double> diff = t2 - t1;
-    cout << "map: " << diff.count() << endl;
+    cout << "std::map: " << diff.count() << endl;
 
     auto t3 = steady_clock::now();
     for (int i = 0; i < total_run; ++i) {

@@ -65,7 +65,7 @@ protected:
         }
     }
 
-    void fixUp(node_type *node) {
+    void fixUp(node_type *node, bool once = true) {
         while (node) {
             auto left = node->getLeft();
             auto right = node->getRight();
@@ -81,26 +81,32 @@ protected:
 
             // found the first unbalanced node, rotate, then we are done
             if (diff > 1) {
-                // left-left case
-                if (getHight(left->getLeft()) > getHight(left->getRight())) {
-                    // node became child of left
-                    rightRorateUpdate(node);
-                    return;
-                }
                 // left-right case
-                leftRotateUpdate(left);
+                if (getHight(left->getLeft()) < getHight(left->getRight())) {
+                    // node became child of left
+                    leftRotateUpdate(left);
+                }
+                // left-left case
                 rightRorateUpdate(node);
-                return;
+                if (once) {
+                    break;
+                } else {
+                    node = parent;
+                    continue;
+                }
             }
-            if (getHight(right->getRight()) > getHight(right->getLeft())) {
-                // right-right case
-                leftRotateUpdate(node);
-                return;
+            if (getHight(right->getRight()) < getHight(right->getLeft())) {
+                // right-left case
+                rightRorateUpdate(right);
             }
-            // right-left case
-            rightRorateUpdate(right);
+            // right-right case
             leftRotateUpdate(node);
-            return;
+            if (once) {
+                break;
+            } else {
+                node = parent;
+                continue;
+            }
         }
     }
 
@@ -208,7 +214,7 @@ public:
 
         auto parent = node->getParent();
         auto ret = BstUnlinkNode(node);
-        fixUp(parent);
+        fixUp(parent, false);
         if (m_root == node) {
             m_root = ret;
         }
