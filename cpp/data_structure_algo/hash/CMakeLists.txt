@@ -1,0 +1,3 @@
+auto_add_library(hash TYPE INTERFACE DEPENDS list)
+
+auto_add_test(test_hash SRCS test/test_hash.cpp DEPENDS hash ${GTEST})
