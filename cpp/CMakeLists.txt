@@ -9,13 +9,9 @@ include(util)
 find_package(GTest REQUIRED PATHS ext/${CMAKE_SYSTEM_NAME}/gtest NO_DEFAULT_PATH)
 set(GTEST GTest::gtest GTest::gtest_main)
 
-if (UNIX)
-    include (CTest) # for memcheck
-    # run with command
-    # ctest --overwrite MemoryCheckCommandOptions="--leak-check=full --show-leak-kinds=all --trace-children=yes" \
-    #      --overwrite MemoryCheckSuppressionFile=/path/to/valgrind.suppressions \
-    #      -T memcheck
-endif()
+include (CTest) # for memcheck
+find_program(MEMORYCHECK_COMMAND valgrind)
+set(MEMORYCHECK_COMMAND_OPTIONS "--leak-check=yes --show-reachable=yes --num-callers=50 --track-fds=yes --trace-children=yes")
 
 enable_testing()
 auto_add_subdirs()
