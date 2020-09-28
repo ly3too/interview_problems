@@ -12,32 +12,33 @@ public:
     using value_type = T;
 
 protected:
+    template<typename NT>
     class NodeBase {
     public:
         NodeBase(): next(nullptr) {
 
         }
 
-        NodeBase *next;
+        NT *next;
     };
 
-    class Node: public NodeBase {
+    class Node: public NodeBase<Node> {
     public:
-        explicit Node(T&& val): NodeBase(), m_val(std::forward<T>(val)) {
+        explicit Node(T&& val): NodeBase<Node>(), m_val(std::forward<T>(val)) {
 
         }
 
         T m_val;
     };
 
-    NodeBase m_head;
+    NodeBase<Node> m_head;
     std::size_t m_size;
 public:
     class iterator {
     public:
         using value_type = std::remove_reference_t<T>;
 
-        iterator(NodeBase *cur): m_cur(cur) {
+        iterator(NodeBase<Node> *cur): m_cur(cur) {
 
         }
 
@@ -47,11 +48,11 @@ public:
         }
 
         value_type &operator*() {
-            return static_cast<Node *>(m_cur)->m_val;
+            return static_cast<Node*>(m_cur)->m_val;
         }
 
         value_type *operator->() {
-            return &(static_cast<Node *>(m_cur)->m_val);
+            return &static_cast<Node*>(m_cur)->m_val;
         }
 
         bool operator==(const iterator &other) {
@@ -63,7 +64,7 @@ public:
         }
 
     protected:
-        NodeBase *m_cur;
+        NodeBase<Node> *m_cur;
 
         friend class ForwardList;
     };
@@ -173,30 +174,31 @@ public:
     using reference = value_type &;
 
 protected:
+    template<typename NT>
     struct BaseNode {
-        BaseNode *prev;
-        BaseNode *next;
-        BaseNode(): prev(this), next(this) {}
+        NT *prev;
+        NT *next;
+        BaseNode(): prev(static_cast<NT *>(this)), next(static_cast<NT *>(this)) {}
     };
 
-    struct Node: public BaseNode {
+    struct Node: public BaseNode<Node> {
         value_type val;
 
         template<typename ...Args>
-        Node(Args&&... val): BaseNode(), val(std::forward<Args>(val)...) {
+        Node(Args&&... val): BaseNode<Node>(), val(std::forward<Args>(val)...) {
 
         }
     };
 
     using node_alloc_type = typename Alloc::template rebind<Node>::other;
 
-    BaseNode m_head;
+    BaseNode<Node> m_head;
     std::size_t m_size;
     node_alloc_type m_alloc = node_alloc_type();
 public:
     class iterator {
     public:
-        iterator(BaseNode *node): m_cur(node) {}
+        iterator(Node *node): m_cur(node) {}
 
         iterator operator++() {
             m_cur = m_cur->next;
@@ -209,11 +211,11 @@ public:
         }
 
         value_type &operator*() {
-            return static_cast<Node *>(m_cur)->val;
+            return m_cur->val;
         }
 
         value_type &operator->() {
-            return &static_cast<Node *>(m_cur)->val;
+            return &m_cur->val;
         }
 
         bool operator!=(const iterator &other) {
@@ -225,7 +227,7 @@ public:
         }
 
     protected:
-        BaseNode *m_cur;
+        Node *m_cur;
 
         friend class List;
     };
@@ -259,8 +261,8 @@ public:
             m_alloc.destroy(node);
             m_alloc.deallocate(node, 1);
         }
-        m_head.prev = &m_head;
-        m_head.next = &m_head;
+        m_head.prev = static_cast<Node *>(&m_head);
+        m_head.next = static_cast<Node *>(&m_head);
         m_size = 0;
     }
 
@@ -271,7 +273,7 @@ public:
     template<typename ... Args>
     void emplace_back(Args&&... val) {
         auto prev = m_head.prev;
-        auto next = &m_head;
+        auto next = static_cast<Node *>(&m_head);
 
         Node *node = nullptr;
         try {
@@ -294,7 +296,7 @@ public:
 
     template<typename ... Args>
     void emplace_front(Args&&... val) {
-        auto prev = &m_head;
+        auto prev = static_cast<Node*>(&m_head);
         auto next = m_head.next;
         auto node = new Node(std::forward<Args>(val)...);
         node->next = next;
@@ -344,11 +346,11 @@ public:
     }
 
     iterator begin() const {
-        return iterator(const_cast<BaseNode *>(m_head.next));
+        return iterator(m_head.next);
     }
 
     iterator end() const {
-        return iterator(const_cast<BaseNode *>(&m_head));
+        return iterator(static_cast<Node *>(&const_cast<List *>(this)->m_head));
     }
 
     /**
