@@ -14,7 +14,7 @@ public:
             crc = Table[(uint8_t)(crc >> 56) ^ *b++] ^ (crc << 8);
         }
 
-        return ~crc;
+        return crc;
     }
 };
 
