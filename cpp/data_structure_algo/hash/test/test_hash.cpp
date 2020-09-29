@@ -30,6 +30,10 @@ TEST(test, hash) {
     ASSERT_EQ((MyHash<string, DJB2Hash>(str1)), (MyHash<string, DJB2Hash>(str2)));
 
     cout << "MyHash(\"abcd\", 4) = " << MyHash("abcd", 4) << endl;
+    auto vec = vector<int>(1);
+    cout << "MyHash(vector<int>(1)) = " << MyHash(vec) << endl;
+    vec.emplace_back(1);
+    cout << "MyHash(vector<int>(1)) = " << MyHash(vec) << endl;
 }
 
 int main() {
