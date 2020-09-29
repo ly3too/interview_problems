@@ -1,6 +1,7 @@
 #include "hash/hash.hpp"
 #include "gtest/gtest.h"
 #include <functional>
+#include <unordered_map>
 
 using namespace std;
 using namespace my_hash;
@@ -34,6 +35,10 @@ TEST(test, hash) {
     cout << "MyHash(vector<int>(1)) = " << MyHash(vec) << endl;
     vec.emplace_back(1);
     cout << "MyHash(vector<int>(1)) = " << MyHash(vec) << endl;
+}
+
+TEST(test, hash_map) {
+    FixedHashMap<string, string> map(100);
 }
 
 int main() {

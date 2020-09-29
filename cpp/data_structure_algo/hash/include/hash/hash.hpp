@@ -4,6 +4,8 @@
 #include <type_traits>
 #include <string>
 #include <cstring>
+#include "vector/vector.hpp"
+#include "list/list.hpp"
 
 namespace my_hash {
 
@@ -170,11 +172,19 @@ struct Hash {
     static std::size_t hash(const T& val) {
         return HashFun(&val, sizeof(val));
     }
+
+    std::size_t operator()(const T& val) const {
+        return HashFun(&val, sizeof(val));
+    }
 };
 
 template<typename T, decltype(DJB2Hash) HashFun>
 struct Hash<T, HashFun, std::enable_if_t<std::is_integral<T>::value || std::is_enum<T>::value || std::is_pointer<T>::value> > {
     static std::size_t hash(const T& val) {
+        return std::size_t(val);
+    }
+
+    std::size_t operator()(const T& val) const {
         return std::size_t(val);
     }
 };
@@ -191,6 +201,10 @@ struct Hash<std::string, HashFun> {
     static std::size_t hash(const std::string& val) {
         return HashFun(val.data(), val.size());
     }
+
+    std::size_t operator()(const std::string& val) const {
+        return HashFun(val.data(), val.size());
+    }
 };
 
 template<typename T, decltype(DJB2Hash) HashFun = Crc64::compute>
@@ -202,5 +216,65 @@ template<decltype(DJB2Hash) HashFun = Crc64::compute>
 std::size_t MyHash(const char *p, std::size_t len) {
     return Hash<const char *, HashFun>::hash(p, len);
 }
+
+template<typename Key, typename Val, typename H = Hash<Key>,
+    typename Alloc = std::allocator<std::pair<Key, Val>>>
+class FixedHashMap {
+public:
+    using key_type = Key;
+    using map_type = Val;
+    using allocator_type = Alloc;
+    using value_type = std::pair<key_type, map_type>;
+    using size_type = std::size_t;
+    using hasher = H;
+
+protected:
+    using slot_type = List<value_type, allocator_type>;
+    using slot_alloctor = typename allocator_type::template rebind<slot_type>::other;
+    using bucket_type = Vector<slot_type, slot_alloctor>;
+
+
+    size_type m_cnt = 0;
+    bucket_type m_bucket;
+    hasher m_hash = hasher();
+public:
+    explicit FixedHashMap(size_type bucket_size, const allocator_type &alloc = allocator_type()):
+        m_bucket(bucket_size, slot_type(alloc), alloc) {
+        if (bucket_size < 0) {
+            throw std::invalid_argument("bucket size must be positive");
+        }
+    }
+
+    float loadFactor() const {
+        return float(m_cnt) / m_bucket.size();
+    }
+
+    size_type size() {
+        return m_cnt;
+    }
+
+    void insert(value_type kv) {
+        size_type idx = m_hash(kv.first) % m_bucket.size();
+        auto &slot = m_bucket[idx];
+        for (auto it = slot.begin(); it != slot.end(); ++it) {
+            if (it->first == kv.first) {
+                it->second = std::move(kv.second);
+                return;
+            }
+        }
+        slot.emplace_back();
+    }
+
+    value_type *find(const key_type& key) {
+        size_type idx = m_hash(key) % m_bucket.size();
+        auto &slot = m_bucket[idx];
+        for (auto &item: slot) {
+            if (item.first == key) {
+                return &item;
+            }
+        }
+        return nullptr;
+    }
+};
 
 }
