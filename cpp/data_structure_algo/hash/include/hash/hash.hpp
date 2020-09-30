@@ -242,6 +242,8 @@ public:
         m_bucket(bucket_size, slot_type(alloc), alloc) {
     }
 
+    FixedHashMap &operator=(FixedHashMap&& other) = default;
+
     float loadFactor() const {
         return float(m_cnt) / m_bucket.size();
     }
@@ -281,15 +283,69 @@ public:
         return false;
     }
 
-    value_type *find(const key_type& key) {
-        size_type idx = m_hash(key) % m_bucket.size();
-        auto &slot = m_bucket[idx];
-        for (auto &item: slot) {
-            if (item.first == key) {
-                return &item;
+    class iterator {
+    public:
+        using bucket_iterator = typename bucket_type::iterator;
+        using slot_iterator = typename slot_type::iterator;
+
+    protected:
+        bucket_iterator m_bucket_it;
+        slot_iterator m_slot_it;
+
+    public:
+        iterator(bucket_iterator b_it, slot_iterator s_it): m_bucket_it(b_it), m_slot_it(s_it) {}
+
+        bool operator==(const iterator &other) const {
+            return m_bucket_it == other.m_bucket_it && (m_slot_it == other.m_slot_it);
+        }
+
+        iterator &operator++() {
+            if (m_slot_it == m_bucket_it->end()) {
+                ++m_bucket_it;
+                m_slot_it = slot_iterator(nullptr);
+            } else {
+                if (m_slot_it == slot_iterator(nullptr)) {
+                    m_slot_it = m_bucket_it->begin();
+                }
+                ++m_slot_it;
             }
         }
-        return nullptr;
+
+        value_type &operator*() const {
+            auto slot_it = m_slot_it;
+            if (slot_it == slot_iterator(nullptr)) {
+                slot_it = m_bucket_it->begin();
+            }
+            return *slot_it;
+        }
+
+        value_type *operator->() const {
+            return &(*(*this));
+        }
+    };
+
+    iterator begin() const {
+        return iterator(m_bucket.begin(), slot_type::iterator(nullptr));
+    }
+
+    iterator end() const {
+        return iterator(m_bucket.end(), slot_type::iterator(nullptr));
+    }
+
+    iterator find(const key_type& key) const {
+        size_type idx = m_hash(key) % m_bucket.size();
+        auto b_it = m_bucket.begin() + idx;
+        for (auto s_it = b_it->begin(); s_it != b_it->end(); ++s_it) {
+            if (s_it->first == key) {
+                return iterator(b_it, s_it);
+            }
+        }
+        return end();
+    }
+
+    bool erase(const iterator& it) {
+        auto &key = it->first;
+        return erase(key);
     }
 };
 
@@ -301,6 +357,7 @@ class HashMap {
 public:
     using key_type = Key;
     using map_type = Val;
+    using value_type = std::pair<key_type, map_type>;
     using hasher = H;
     using allocator_type = Alloc;
     using size_type = std::size_t;
@@ -308,12 +365,38 @@ public:
 protected:
     using InnerMap = FixedHashMap<Key, Val, H, Alloc>;
 
-    InnerMap m_fixedMap[2];
+    InnerMap m_inner[2] = {InnerMap(MIN_BUCKET_SIZE), InnerMap(0)}; // rehash rorate
     int m_idx = 0;
+    typename InnerMap::iterator m_rehash_it;
+
+    inline int nextIdx() {
+        return (m_idx + 1) % 2;
+    }
+
+    void inline checkRehash() {
+        auto next = nextIdx();
+        auto cnt = MOVE_BATCH_SIZE;
+        while (m_inner[next].size() && cnt--) {
+            m_inner[m_idx].insert(*m_rehash_it);
+            auto prev_it = m_rehash_it;
+            ++m_rehash_it;
+            m_inner[next].erase(prev_it);
+        }
+    }
 
 public:
 
+    size_type size() {
+        return m_inner[0].size() + m_inner[1].size();
+    }
 
+    bool empty() {
+        return size() == 0;
+    }
+
+    value_type *find(const key_type &key) const {
+
+    }
 };
 
 }
