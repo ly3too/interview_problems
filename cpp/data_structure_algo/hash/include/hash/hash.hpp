@@ -240,9 +240,6 @@ protected:
 public:
     explicit FixedHashMap(size_type bucket_size, const allocator_type &alloc = allocator_type()):
         m_bucket(bucket_size, slot_type(alloc), alloc) {
-        if (bucket_size < 0) {
-            throw std::invalid_argument("bucket size must be positive");
-        }
     }
 
     float loadFactor() const {
@@ -297,5 +294,26 @@ public:
 };
 
 
+template<typename Key, typename Val, typename H = Hash<Key>,
+    typename Alloc = std::allocator<std::pair<Key, Val>>,
+    std::size_t MIN_BUCKET_SIZE = 4, std::size_t MOVE_BATCH_SIZE = 4>
+class HashMap {
+public:
+    using key_type = Key;
+    using map_type = Val;
+    using hasher = H;
+    using allocator_type = Alloc;
+    using size_type = std::size_t;
+
+protected:
+    using InnerMap = FixedHashMap<Key, Val, H, Alloc>;
+
+    InnerMap m_fixedMap[2];
+    int m_idx = 0;
+
+public:
+
+
+};
 
 }
