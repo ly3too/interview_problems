@@ -253,16 +253,35 @@ public:
         return m_cnt;
     }
 
+    bool empty() {
+        return m_cnt == 0;
+    }
+
     void insert(value_type kv) {
         size_type idx = m_hash(kv.first) % m_bucket.size();
         auto &slot = m_bucket[idx];
-        for (auto it = slot.begin(); it != slot.end(); ++it) {
+        auto end = slot.end();
+        for (auto it = slot.begin(); it != end; ++it) {
             if (it->first == kv.first) {
                 it->second = std::move(kv.second);
                 return;
             }
         }
-        slot.emplace_back();
+        ++m_cnt;
+        slot.emplace_back(std::move(kv));
+    }
+
+    bool erase(const key_type& key) {
+        size_type idx = m_hash(key) % m_bucket.size();
+        auto &slot = m_bucket[idx];
+        for (auto it = slot.begin(); it != slot.end(); ++it) {
+            if (it->first == key) {
+                slot.erase(it);
+                --m_cnt;
+                return true;
+            }
+        }
+        return false;
     }
 
     value_type *find(const key_type& key) {
@@ -276,5 +295,7 @@ public:
         return nullptr;
     }
 };
+
+
 
 }

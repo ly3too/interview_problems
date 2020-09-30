@@ -39,6 +39,20 @@ TEST(test, hash) {
 
 TEST(test, hash_map) {
     FixedHashMap<string, string> map(100);
+    ASSERT_TRUE(map.empty());
+    for (auto i = 0; i < 100; ++i) {
+        map.insert(make_pair(to_string(i), to_string(i)));
+        ASSERT_EQ(map.size(), i + 1);
+        ASSERT_FLOAT_EQ(map.loadFactor(), float(i + 1) / 100);
+    }
+
+    auto it = map.find("88");
+    ASSERT_NE(it, nullptr);
+    ASSERT_EQ(it->second, "88");
+    ASSERT_TRUE(map.erase("88"));
+    ASSERT_EQ(map.size(), 99);
+
+    ASSERT_EQ(map.find("100"), nullptr);
 }
 
 int main() {

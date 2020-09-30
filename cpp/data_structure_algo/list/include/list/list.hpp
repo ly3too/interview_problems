@@ -176,9 +176,8 @@ public:
 protected:
     template<typename NT>
     struct BaseNode {
-        NT *prev;
-        NT *next;
-        BaseNode(): prev(static_cast<NT *>(this)), next(static_cast<NT *>(this)) {}
+        NT *prev = nullptr;
+        NT *next = nullptr;
     };
 
     struct Node: public BaseNode<Node> {
@@ -214,7 +213,7 @@ public:
             return m_cur->val;
         }
 
-        value_type &operator->() {
+        value_type *operator->() {
             return &m_cur->val;
         }
 
@@ -234,6 +233,14 @@ public:
 
     List(allocator_type alloc = allocator_type()):
     m_head(), m_size(0), m_alloc(std::move(alloc)) {
+        m_head.prev = reinterpret_cast<Node *>(&m_head);
+        m_head.next = reinterpret_cast<Node *>(&m_head);
+    }
+
+    List(const List &other): List(other.m_alloc) {
+        for (auto &item: other) {
+            emplace_back(item);
+        }
     }
 
     explicit List(size_type n, const value_type &val = value_type(),
@@ -261,8 +268,8 @@ public:
             m_alloc.destroy(node);
             m_alloc.deallocate(node, 1);
         }
-        m_head.prev = static_cast<Node *>(&m_head);
-        m_head.next = static_cast<Node *>(&m_head);
+        m_head.prev = reinterpret_cast<Node *>(&m_head);
+        m_head.next = reinterpret_cast<Node *>(&m_head);
         m_size = 0;
     }
 
@@ -350,7 +357,7 @@ public:
     }
 
     iterator end() const {
-        return iterator(static_cast<Node *>(&const_cast<List *>(this)->m_head));
+        return iterator(reinterpret_cast<Node *>(&const_cast<List *>(this)->m_head));
     }
 
     /**
