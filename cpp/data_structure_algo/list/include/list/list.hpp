@@ -199,29 +199,29 @@ public:
     public:
         iterator(Node *node): m_cur(node) {}
 
-        iterator operator++() {
+        iterator& operator++() {
             m_cur = m_cur->next;
             return *this;
         }
 
-        iterator operator--() {
+        iterator& operator--() {
             m_cur = m_cur->prev;
             return *this;
         }
 
-        value_type &operator*() {
+        value_type &operator*() const {
             return m_cur->val;
         }
 
-        value_type *operator->() {
+        value_type *operator->() const {
             return &m_cur->val;
         }
 
-        bool operator!=(const iterator &other) {
+        bool operator!=(const iterator &other) const {
             return m_cur != other.m_cur;
         }
 
-        bool operator==(const iterator &other) {
+        bool operator==(const iterator &other) const {
             return m_cur == other.m_cur;
         }
 

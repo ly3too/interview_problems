@@ -47,12 +47,50 @@ TEST(test, hash_map) {
     }
 
     auto it = map.find("88");
-    ASSERT_NE(it, nullptr);
+    ASSERT_NE(it, map.end());
     ASSERT_EQ(it->second, "88");
     ASSERT_TRUE(map.erase("88"));
     ASSERT_EQ(map.size(), 99);
 
-    ASSERT_EQ(map.find("100"), nullptr);
+    ASSERT_EQ(map.find("100"), map.end());
+}
+
+template<typename Key, typename Val>
+class TestHashMap: public HashMap<Key, Val> {
+public:
+    TestHashMap() = default;
+
+    using size_type = typename HashMap<Key, Val>::size_type;
+
+    int getIndex() const {
+        return this->m_idx;
+    }
+
+    float getLF(int idx) {
+        return this->m_inner[idx].loadFactor();
+    }
+};
+
+TEST(test, rehash) {
+    TestHashMap<int, int> map;
+    ASSERT_TRUE(map.empty());
+    map.insert(make_pair(1, 1));
+    ASSERT_EQ(map.size(), 1);
+    map.insert(make_pair(2, 2));
+    ASSERT_EQ(map.size(), 2);
+    map.insert(make_pair(2, 2));
+    ASSERT_EQ(map.size(), 2);
+    ASSERT_EQ(map.getIndex(), 0);
+    map.insert(make_pair(3, 3));
+    map.insert(make_pair(4, 4));
+    ASSERT_EQ(map.getIndex(), 1);
+    ASSERT_EQ(map.size(), 4);
+    ASSERT_FLOAT_EQ(map.getLF(1), 0.5);
+
+    int idx = 1;
+    for(auto &item: map) {
+        ASSERT_EQ(item.first, idx++);
+    }
 }
 
 int main() {

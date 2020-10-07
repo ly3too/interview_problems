@@ -45,6 +45,7 @@ public:
         for (auto &item: other) {
             emplace_back(item);
         }
+        return *this;
     }
 
     ~Vector() {
@@ -80,11 +81,11 @@ public:
             return m_cur != other.m_cur;
         }
 
-        value_type &operator*() {
+        value_type &operator*() const {
             return *m_cur;
         }
 
-        value_type *operator->() {
+        value_type *operator->() const {
             return m_cur;
         }
 

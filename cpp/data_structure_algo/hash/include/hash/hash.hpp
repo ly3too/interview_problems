@@ -242,21 +242,21 @@ public:
         m_bucket(bucket_size, slot_type(alloc), alloc) {
     }
 
-    FixedHashMap &operator=(FixedHashMap&& other) = default;
+    //FixedHashMap &operator=(FixedHashMap&& other) = default;
 
     float loadFactor() const {
         return float(m_cnt) / m_bucket.size();
     }
 
-    size_type size() {
+    size_type size() const {
         return m_cnt;
     }
 
-    bool empty() {
+    bool empty() const {
         return m_cnt == 0;
     }
 
-    void insert(value_type kv) {
+    void insert(value_type&& kv) {
         size_type idx = m_hash(kv.first) % m_bucket.size();
         auto &slot = m_bucket[idx];
         auto end = slot.end();
@@ -268,6 +268,10 @@ public:
         }
         ++m_cnt;
         slot.emplace_back(std::move(kv));
+    }
+
+    void insert(const value_type& kv) {
+        insert(value_type(kv));
     }
 
     bool erase(const key_type& key) {
@@ -291,24 +295,35 @@ public:
     protected:
         bucket_iterator m_bucket_it;
         slot_iterator m_slot_it;
+        bucket_iterator m_bucket_end;
 
+        void skipEmpty() {
+            while (m_bucket_it != m_bucket_end && (m_slot_it == m_bucket_it->end() || m_bucket_it->empty())) {
+                ++m_bucket_it;
+                m_slot_it = slot_iterator(nullptr);
+            }
+        }
+        friend class FixedHashMap;
     public:
-        iterator(bucket_iterator b_it, slot_iterator s_it): m_bucket_it(b_it), m_slot_it(s_it) {}
+        iterator(const bucket_iterator& b_it, const slot_iterator& s_it, const bucket_iterator& end): m_bucket_it(b_it), m_slot_it(s_it),
+        m_bucket_end(end) {}
 
         bool operator==(const iterator &other) const {
             return m_bucket_it == other.m_bucket_it && (m_slot_it == other.m_slot_it);
         }
 
-        iterator &operator++() {
-            if (m_slot_it == m_bucket_it->end()) {
-                ++m_bucket_it;
-                m_slot_it = slot_iterator(nullptr);
-            } else {
-                if (m_slot_it == slot_iterator(nullptr)) {
-                    m_slot_it = m_bucket_it->begin();
-                }
-                ++m_slot_it;
+        bool operator!=(const iterator &other) const {
+            return !this->operator==(other);
+        }
+
+        iterator& operator++() {
+            auto slot_it = m_slot_it;
+            if (slot_it == slot_iterator(nullptr)) {
+                slot_it = m_bucket_it->begin();
             }
+            m_slot_it = ++slot_it;
+            skipEmpty();
+            return *this;
         }
 
         value_type &operator*() const {
@@ -325,11 +340,13 @@ public:
     };
 
     iterator begin() const {
-        return iterator(m_bucket.begin(), slot_type::iterator(nullptr));
+        auto beg =  iterator(m_bucket.begin(), typename slot_type::iterator(nullptr), m_bucket.end());
+        beg.skipEmpty();
+        return beg;
     }
 
     iterator end() const {
-        return iterator(m_bucket.end(), slot_type::iterator(nullptr));
+        return iterator(m_bucket.end(), typename slot_type::iterator(nullptr), m_bucket.end());
     }
 
     iterator find(const key_type& key) const {
@@ -337,7 +354,7 @@ public:
         auto b_it = m_bucket.begin() + idx;
         for (auto s_it = b_it->begin(); s_it != b_it->end(); ++s_it) {
             if (s_it->first == key) {
-                return iterator(b_it, s_it);
+                return iterator(b_it, s_it, m_bucket.end());
             }
         }
         return end();
@@ -367,35 +384,131 @@ protected:
 
     InnerMap m_inner[2] = {InnerMap(MIN_BUCKET_SIZE), InnerMap(0)}; // rehash rorate
     int m_idx = 0;
-    typename InnerMap::iterator m_rehash_it;
+    typename InnerMap::iterator m_rehash_it = m_inner[1].begin();
 
-    inline int nextIdx() {
+    inline int nextIdx() const {
         return (m_idx + 1) % 2;
     }
 
     void inline checkRehash() {
         auto next = nextIdx();
-        auto cnt = MOVE_BATCH_SIZE;
-        while (m_inner[next].size() && cnt--) {
-            m_inner[m_idx].insert(*m_rehash_it);
-            auto prev_it = m_rehash_it;
-            ++m_rehash_it;
-            m_inner[next].erase(prev_it);
+
+        // check rehash rotate
+        if (m_inner[next].empty()) {
+            auto cur_load_factor = m_inner[m_idx].loadFactor();
+            auto cur_size = m_inner[m_idx].size();
+            if (cur_load_factor >= 1.0) {
+                m_inner[next] = InnerMap(2 * cur_size);
+                m_idx = next;
+                next = nextIdx();
+                m_rehash_it = m_inner[next].begin();
+            } else if (cur_load_factor <= 0.25 && cur_size > MIN_BUCKET_SIZE) {
+                m_inner[next] = InnerMap(std::max(cur_size / 2, MIN_BUCKET_SIZE));
+                m_idx = next;
+                next = nextIdx();
+                m_rehash_it = m_inner[next].begin();
+            }
+        }
+
+        // in rehash phase
+        if (m_inner[next].size()) {
+            auto cnt = MOVE_BATCH_SIZE;
+            while (m_inner[next].size() && cnt--) {
+                m_inner[m_idx].insert(std::move(*m_rehash_it));
+                auto prev_it = m_rehash_it;
+                ++m_rehash_it;
+                m_inner[next].erase(prev_it);
+            }
+            // done
+            if (m_inner[next].empty()) {
+                m_inner[next] = InnerMap(0);
+            }
         }
     }
 
 public:
 
-    size_type size() {
+    size_type size() const {
         return m_inner[0].size() + m_inner[1].size();
     }
 
-    bool empty() {
+    bool empty() const {
         return size() == 0;
     }
 
-    value_type *find(const key_type &key) const {
+    class iterator {
+    protected:
+        using inner_iter = typename InnerMap::iterator;
 
+        int m_idx;
+        inner_iter m_inner;
+        const HashMap &m_map;
+    public:
+        iterator(int idx, const inner_iter& inner, const HashMap &map): m_idx(idx), m_inner(inner), m_map(map) {}
+
+        // iterator(const iterator &other) = default;
+
+        bool operator==(const iterator &other) {
+            return m_idx == other.m_idx && m_inner == other.m_inner;
+        }
+
+        bool operator!=(const iterator &other) {
+            return !this->operator==(other);
+        }
+
+        iterator& operator++() {
+            ++m_inner;
+            if (m_inner == m_map.m_inner[m_idx].end()) {
+                m_idx = (m_idx + 1) % 2;
+                m_inner = m_map.m_inner[m_idx].begin();
+            }
+            return *this;
+        }
+
+        value_type& operator*() {
+            return *m_inner;
+        }
+
+        value_type* operator->() {
+            return m_inner.operator->();
+        }
+
+        friend class HashMap;
+    };
+
+    iterator find(const key_type &key) const {
+        auto it = m_inner[m_idx].find(key);
+        if (it) {
+            return iterator(m_idx, it, *this);
+        }
+        auto idx = nextIdx();
+        it = m_inner[idx].find(key);
+        return iterator(idx, it, *this);
+    }
+
+    void insert(const value_type& kv) {
+        m_inner[m_idx].insert(kv);
+        checkRehash();
+    }
+
+    void erase(const iterator& it) {
+        m_inner[it.m_idx].erase(it.m_inner);
+    }
+
+    void erase(const key_type& key) {
+        auto it = find(key);
+        if (it != end()) {
+            erase(it);
+        }
+    }
+
+    iterator begin() const {
+        return iterator(m_idx, m_inner[m_idx].begin(), *this);
+    }
+
+    iterator end() const {
+        auto next = nextIdx();
+        return iterator(next, m_inner[next].end(), *this);
     }
 };
 
