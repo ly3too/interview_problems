@@ -493,6 +493,7 @@ public:
 
     void erase(const iterator& it) {
         m_inner[it.m_idx].erase(it.m_inner);
+        checkRehash();
     }
 
     void erase(const key_type& key) {
