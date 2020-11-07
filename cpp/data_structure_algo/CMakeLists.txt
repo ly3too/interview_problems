@@ -1,1 +1,0 @@
-auto_add_subdirs()

@@ -1,1 +1,0 @@
-auto_add_library(utils TYPE INTERFACE)
