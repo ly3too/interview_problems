@@ -65,6 +65,15 @@ public:
         }
         return ret;
     }
+
+    ~List() {
+        auto cur = head.next;
+        while (cur) {
+            auto saved = cur;
+            cur = cur->next;
+            delete saved;
+        }
+    }
 };
 
 TEST(test, list) {
