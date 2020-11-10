@@ -40,6 +40,34 @@ void quickSortInternal(Iter begin, Iter end, const Cmp &cmp) {
     }
 }
 
+template <typename Iter, typename Cmp>
+Iter partition2(Iter begin, Iter end, Iter pivotal, const Cmp &cmp) {
+    if (!(begin < end)) {
+        return pivotal;
+    }
+    auto piv = *pivotal;
+    auto savedBeg = begin;
+    std::swap(*begin, *pivotal);
+    ++begin;
+    --end;
+    while (true) {
+        // end >= begin && *end >= piv
+        while (!(end < begin) && !cmp(*end, piv)) {
+            --end;
+        }
+        // end >= begin && *begin < piv
+        while (!(end < begin) && cmp(*begin, piv)) {
+            ++begin;
+        }
+        if (!(begin < end)) {
+            break;
+        }
+        swap(*begin, *end);
+    }
+    swap(*savedBeg, *end);
+    return end;
+}
+
 template<typename Iter, typename Cmp>
 void quickSort(Iter begin, Iter end, const Cmp &cmp) {
     auto seed = chrono::system_clock::now().time_since_epoch().count();
@@ -49,7 +77,7 @@ void quickSort(Iter begin, Iter end, const Cmp &cmp) {
 
 TEST(test, partition) {
     vector<int> vals = {2, 3, 5, 3, 1, 4, 2, 23,};
-    auto piv = quickPartition(vals.begin(), vals.end(), vals.begin() + 1, std::less<>());
+    auto piv = partition2(vals.begin(), vals.end(), vals.begin() + 1, std::less<>());
     ASSERT_EQ(*piv, 3);
     for (auto it = vals.begin(); it != piv; ++it) {
         ASSERT_TRUE(*it < *piv);
