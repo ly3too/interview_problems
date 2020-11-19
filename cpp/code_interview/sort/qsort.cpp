@@ -69,6 +69,24 @@ Iter partition2(Iter begin, Iter end, Iter pivotal, const Cmp &cmp) {
 }
 
 template<typename Iter, typename Cmp>
+Iter partition3(Iter begin, Iter end, Iter piv, const Cmp& cmp) {
+    swap(*begin, *piv);
+    auto val = *begin;
+    auto start = begin;
+    ++start;
+    while (start < end) {
+        if (cmp(*start, val)) {
+            ++start;
+        } else {
+            swap(*start, *(--end));
+        }
+    }
+    --end;
+    swap(*begin, *end);
+    return end;
+}
+
+template<typename Iter, typename Cmp>
 void quickSort(Iter begin, Iter end, const Cmp &cmp) {
     auto seed = chrono::system_clock::now().time_since_epoch().count();
     shuffle(begin, end, default_random_engine(seed));
@@ -76,14 +94,28 @@ void quickSort(Iter begin, Iter end, const Cmp &cmp) {
 }
 
 TEST(test, partition) {
-    vector<int> vals = {2, 3, 5, 3, 1, 4, 2, 23,};
-    auto piv = partition2(vals.begin(), vals.end(), vals.begin() + 1, std::less<>());
-    ASSERT_EQ(*piv, 3);
-    for (auto it = vals.begin(); it != piv; ++it) {
-        ASSERT_TRUE(*it < *piv);
+    {
+        vector<int> vals = {2, 3, 5, 3, 1, 4, 2, 23,};
+        auto piv = partition2(vals.begin(), vals.end(), vals.begin() + 1, std::less<>());
+        ASSERT_EQ(*piv, 3);
+        for (auto it = vals.begin(); it != piv; ++it) {
+            ASSERT_TRUE(*it < *piv);
+        }
+        for (auto it = piv + 1; it != vals.end(); ++it) {
+            ASSERT_TRUE(*it >= *piv);
+        }
     }
-    for (auto it = piv + 1; it != vals.end(); ++it) {
-        ASSERT_TRUE(*it >= *piv);
+
+    {
+        vector<int> vals = {2, 3, 5, 3, 1, 4, 2, 23,};
+        auto piv = partition3(vals.begin(), vals.end(), vals.begin() + 1, std::less<>());
+        ASSERT_EQ(*piv, 3);
+        for (auto it = vals.begin(); it != piv; ++it) {
+            ASSERT_TRUE(*it < *piv);
+        }
+        for (auto it = piv + 1; it != vals.end(); ++it) {
+            ASSERT_TRUE(*it >= *piv);
+        }
     }
 }
 
