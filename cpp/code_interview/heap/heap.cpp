@@ -43,13 +43,19 @@ void makeHeap(Iter begin, Iter end, const Cmp &cmp = Cmp()) {
 template<typename Iter, typename Cmp = less<typename Iter::value_type>>
 void pushHeap(Iter begin, Iter end, const Cmp& cmp = Cmp()) {
     auto len = end - begin;
-    auto cur = len - 1;
-    while (cur >= 1) {
-        auto parent = (cur - 1) / 2;
-        if (!cmp(*(begin + parent), *(begin + cur))) {
-            swap(*(begin + parent), *(begin + cur));
+    if (len < 2) {
+        return;
+    }
+    auto cur = end - 1;
+    while (true) {
+        auto parent = begin + (cur - begin - 1) / 2;
+        if (!cmp(*parent, *cur)) {
+            swap(*parent, *cur);
             cur = parent;
         } else {
+            break;
+        }
+        if (parent == begin) {
             break;
         }
     }
