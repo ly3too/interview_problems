@@ -65,7 +65,7 @@ int my_atoi(const char *str, MyAtoiErr &err) {
 
 // 考虑溢出，符号，空格，base
 int stoi2(const string &s, size_t* pos = nullptr, int base = 10) {
-    long long ret = 0;
+    int ret = 0;
     auto it = s.begin();
     while (it != s.end() && isspace(*it)) {
         ++it;
@@ -95,6 +95,23 @@ int stoi2(const string &s, size_t* pos = nullptr, int base = 10) {
         }
     }
 
+    // 构造溢出值
+    int overTh;
+    if (negative) {
+        overTh = -(numeric_limits<int>::min() / base);
+    } else {
+        overTh = numeric_limits<int>::max() / base;
+    }
+    int overLastDigit;
+    if (negative) {
+        overLastDigit = -(numeric_limits<int>::min() % base);
+    } else {
+        overLastDigit = numeric_limits<int>::max() % base;
+    }
+    if (overLastDigit <= 0) {
+        overLastDigit += base;
+    }
+
     while(it != s.end()) {
         int val;
         auto ch = *it;
@@ -110,12 +127,10 @@ int stoi2(const string &s, size_t* pos = nullptr, int base = 10) {
             break;
         }
 
-        ret = ret * base + val;
-        if (!negative && ret > numeric_limits<int>::max()) {
-            throw overflow_error(s);
-        } else if (negative && (0 - ret) < numeric_limits<int>::min()) {
+        if (ret > overTh || ret == overTh && val > overLastDigit) {
             throw overflow_error(s);
         }
+        ret = ret * base + val;
         ++it;
     }
 
