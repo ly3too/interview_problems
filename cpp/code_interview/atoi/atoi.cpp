@@ -81,21 +81,20 @@ int stoi2(const string &s, size_t* pos = nullptr, int base = 10) {
     }
 
     // 基数
+    auto start_it = it;
     if (base == 0) {
-        if (it != s.end() && *it == '0') {
-            if (it + 1 != s.end() && tolower(*(it + 1)) == 'x') {
+        base = 10;
+        if ((it + 1) != s.end() && *it == '0') {
+            if (tolower(*(it + 1)) == 'x') {
                 base = 16;
                 ++it;
-            } else {
+            } else if (isdigit(*(it + 1))) {
                 base = 8;
             }
             ++it;
-        } else {
-            base = 10;
         }
     }
 
-    auto start_it = it;
     while(it != s.end()) {
         int val;
         auto ch = *it;
@@ -165,6 +164,7 @@ TEST(test, atoi) {
 }
 
 TEST(test, stoi) {
+    ASSERT_EQ(stoi2(" +08", nullptr, 0), 0);
     ASSERT_EQ(stoi2("1234"), 1234);
     ASSERT_EQ(stoi2("    +123"), stoi("   +123"));
     ASSERT_EQ(stoi2("    -234"), -234);
@@ -182,17 +182,18 @@ TEST(test, stoi) {
     } catch (overflow_error& e) {
     }
 
+    ASSERT_EQ(stoi2("0xpp", nullptr, 0), stoi("0xpp", nullptr, 0));
+
     try {
-        stoi2("0xpp", nullptr, 0);
-        ASSERT_FALSE(true);
+        stoi2("");
+        FAIL() << "should throw";
     } catch (invalid_argument& e) {
     }
 
     try {
-        stoi2("");
-        ASSERT_FALSE(true);
+        stoi2("  +");
+        FAIL() << "should throw";
     } catch (invalid_argument& e) {
-
     }
 
     size_t pos1 = 0;
