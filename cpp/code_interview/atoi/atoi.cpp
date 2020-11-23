@@ -64,7 +64,7 @@ int my_atoi(const char *str, MyAtoiErr &err) {
 }
 
 // 考虑溢出，符号，空格，base
-int stoi2(const string &s, size_t* pos = nullptr, int base = 10) {
+int stoi1(const string &s, size_t* pos = nullptr, int base = 10) {
     int ret = 0;
     auto it = s.begin();
     while (it != s.end() && isspace(*it)) {
@@ -145,6 +145,93 @@ int stoi2(const string &s, size_t* pos = nullptr, int base = 10) {
         *pos = it - s.begin();
     }
     return static_cast<int>(ret);
+}
+
+int stoi2(const string& s, size_t *end_pos = nullptr, int base = 10) {
+    auto it = s.begin();
+    auto end = s.end();
+    auto begin = s.begin();
+
+    // skip spacke
+    while (it < end && isspace(*it)) {
+        ++it;
+    }
+
+    // sign
+    auto positive = true;
+    if (it < end) {
+        if (*it == '-') {
+            positive = false;
+            ++it;
+        } else if (*it == '+') {
+            ++it;
+        }
+    }
+
+    // find base
+    auto start_it = it;
+    if (base == 0) {
+        base = 10;
+        if (it + 1 < end && *it == '0') {
+            if (tolower(*(it + 1)) == 'x') {
+                base = 16;
+                ++it;
+                ++it;
+            } else if (isdigit(*(it + 1))) {
+                base = 8;
+                ++it;
+            }
+        }
+    }
+
+    // find limit
+    int overTh;
+    int lastDigitTh;
+    if (positive) {
+        overTh = numeric_limits<int>::max() / base;
+        lastDigitTh = numeric_limits<int>::max() % base;
+    } else {
+        overTh = - (numeric_limits<int>::min() / base);
+        lastDigitTh = - (numeric_limits<int>::min() % base);
+    }
+    if (lastDigitTh == 0) {
+        lastDigitTh += base;
+    }
+
+    int ret = 0;
+    while(it < end) {
+        auto ch = *it;
+        int val = 0;
+        if (isdigit(ch)) {
+            val = static_cast<int>(ch - '0');
+        } else if (isalpha(ch)) {
+            val = static_cast<int>(tolower(ch) - 'a' + 10);
+        } else {
+            break;
+        }
+        if (val >= base) {
+            break;
+        }
+
+        // check overflow
+        if (ret > overTh || ret == overTh && val > lastDigitTh) {
+            throw overflow_error("stoi");
+        }
+        ret = ret * base + val;
+        ++it;
+    }
+
+    if (it == start_it) {
+        throw invalid_argument("stoi");
+    }
+
+    if (!positive) {
+        ret = 0 - ret;
+    }
+    if (end_pos) {
+        *end_pos = it - begin;
+    }
+    return ret;
 }
 
 TEST(test, atoi) {
